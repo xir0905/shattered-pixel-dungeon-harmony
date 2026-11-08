@@ -22,7 +22,7 @@ entry-default-signed.hap → hdc install -r → ArkWeb WebView 加载运行
 - HAP bundle：`com.example.shatteredpixeldungeon`，API 26（HarmonyOS 7.0）
 - 承载方式：`entry/src/main/ets/pages/Index.ets` 的 ArkWeb WebView
 - GWT 平台缺口（emul/后端 bug）用 **`html/patches/` 覆盖机制**解决：`html/build.gradle` 用 patches 目录里的源文件覆盖 gdx / gwt-user 的 sources jar，重编译即生效
-- 启动 Loading 遮罩（`Index.ets`，原生 ArkUI）显示移植署名："此版本由b站up主xir_9移植 / 仅供学习，无付费"（仅冷启动加载期可见）
+- 启动 Loading 遮罩（`Index.ets`，原生 ArkUI）显示移植署名与版权："此版本由b站up主xir_9移植 / 原项目版权所有 Evan Debenham。"（仅冷启动加载期可见）
 - 存档：**原生 spd-store 文件为主 + localStorage 副本**（C-8 后架构）：`LocalStorageFileHandle` 全部读写经 `SpdStore` 门面 → `window.spdNative` 同步 bridge（`Index.ets` `SpdNativeStore`，`javaScriptProxy` 注入）→ `<filesDir>/spd-store/` fsynced 文件（tmp→write→fsync→rename 原子替换）；localStorage 保留为迁移源/回滚副本（双写双删）。冷启动空窗口与渲染进程惰性落盘丢档均已消除，见 `savegame-loss.md`
 
 ## 2. 目录结构

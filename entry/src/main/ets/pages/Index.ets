@@ -401,13 +401,13 @@ struct Index {
             .fontSize(16)
           // Port credit — shown only during the cold-start loading overlay.
           Text('此版本由b站up主xir_9移植')
-            .fontColor('#7d7d7d')
-            .fontSize(14)
+            .fontColor('#8c8c8c')
+            .fontSize(16)
             .margin({ top: 28 })
             .textAlign(TextAlign.Center)
-          Text('仅供学习，无付费')
-            .fontColor('#7d7d7d')
-            .fontSize(14)
+          Text('原项目版权所有 Evan Debenham。')
+            .fontColor('#8c8c8c')
+            .fontSize(16)
             .textAlign(TextAlign.Center)
         }
         .width('100%')
