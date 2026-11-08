@@ -50,8 +50,9 @@
 ## E. 分发准备（侧载包，不上架应用市场）
 
 - [x] **GPLv3 合规**（2026-11-09 完成）：仓库根新增 `LICENSE.txt`（GPLv3 全文）+ `README.md`（非官方移植声明 / 源码获取 / 构建说明 / 侧载安装 / 署名 Evan Debenham / 禁止商用）。SPD 源码 + `html/patches/` + ArkTS 宿主全部在仓库内。**发 HAP 时必须同时提供对应源码**：仓库转 Public，或随包附源码压缩包；发布说明用 `spec/release-signing.md` §9 的固定模板。
-- [ ] **发布签名（侧载必需，分发 P0）**：当前 `build-profile.json5` 用 DevEco 自动生成的**调试材料**——调试 Profile 内含设备 UDID 白名单，**观众手机装不上**。需：AGC 个人开发者账号（实名）→ 创建应用（包名一致）→ 申请**发布证书 .cer + 发布 Profile .p7b（release，无设备限制）**→ 替换 signingConfigs → `build-all.ps1 -Release` 出包。完整步骤/自检/用户安装说明见 **`spec/release-signing.md`**。⚠️ **包名定稿**（现为模板示例 `com.example.shatteredpixeldungeon`）：2026-11-09 实测**改包名会因签名档案绑定旧包名而 SignHap 失败**（`bundleName ... does not match ... SigningConfigs`），必须与新包名的发布证书/Profile 一起做；改包名会使旧安装的存档不继承 → **用 D-8 备份迁移**（三连击顶部黑边 → 导出；新包安装后 → 导入）。
-- [ ] **侧载安装说明（随包发布）**：B 站简介 / 包内 txt —— 安装方式（文件管理器允许"外部来源应用安装"，或 `hdc install`）、系统要求 API 26+、**存档备份操作**（三连击屏幕顶部黑边 → 导出/导入）、存档位置与"卸载即删除"提示、反馈方式（版本号 + hilog/faultlog）。
+- [ ] **分发方案决策（原"发布签名"项，2026-11-09 实测后重写）**：**AGC 发布证书签名的包无法本地安装**——实测签名成功但 `hdc install` 报 `9568322 signature verification failed due to not trusted app source`；官方 FAQ 明确 *AGC 发布的证书仅支持上架使用，不支持本地安装*。可选路径：①**调试证书+调试 Profile（设备白名单 ≤100 台）**——粉丝报 UDID、加白名单、重签（适合小范围）；②上架 AppGallery（用户已排除）；③**AppGallery 内部测试/邀请测试**（观众用华为账号加入即可从市场安装，需确认当期版号政策）；④**源码 + 粉丝自行构建**（装 DevEco 自动签名，与 GPLv3 源码开放契合）。完整实测记录与可复用签名命令见 `spec/release-signing.md` §0/§0.1。**待用户选定方向**；当前保持调试签名 + 原包名以保证本机可玩。
+- [x] **发布签名材料已备齐**（2026-11-09）：密钥库 `xir.p12`（alias `xir_09`，EC256）、证书链 `xir_09.cer`（根→中间CA→发布证书）、发布 Profile `shattered pixel dungeonRelease.p7b`（bundleName `com.xir9.spd`，至 2029-11-09）；hap-sign-tool 签名流程跑通（未签名构建 → 签名 → release profile 生效），仅受"不可本地安装"限制。注意：**这些材料不要提交进仓库**。
+- [ ] **安装说明（随源码/测试包发布）**：B 站简介 / 包内 txt —— 两条可行路径的说明：**源码自编译**（装 DevEco → 打开仓库 → 自动签名 → 安装，需把自己设备加入调试 Profile）或**调试包白名单**（发 UDID 给作者）；含系统要求 API 26+、**存档备份操作**（三连击屏幕顶部黑边 → 导出/导入）、存档位置与"卸载即删除"提示、反馈方式（版本号 + hilog/faultlog）。
 - [ ] **版本号策略**：`AppScope/app.json5` versionCode/versionName 与 SPD 版本联动（4.0.2.x），每次发版递增（细则见 `spec/release-signing.md` §8）。
 - [x] **权限审查**（2026-11-09 完成，无需改动）：`module.json5` **无任何 requestPermissions 声明**——所有资源经 `onInterceptRequest` 从 rawfile 本地供给，不依赖网络；侧载分发无商店隐私要求，README 已声明无数据收集。
 - [x] ~~上架合规评估~~（**不做应用市场，该项删除**）

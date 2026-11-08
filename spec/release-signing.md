@@ -1,8 +1,56 @@
 # 侧载分发：发布签名指南
 
-日期：2026-11-09 ｜ 目标：把 **release 签名**的 HAP 发给他人侧载安装（**不上架应用市场**）
+日期：2026-11-09 ｜ 目标：把安装包发给他人安装（**不上架应用市场**）
 
-## 1. 为什么必须换签名
+## 0. 结论先行（2026-11-09 真机实测，务必先读）
+
+**AGC 发布证书签名的 HAP 无法本地安装。** 实测流程全部成功（release Profile 签发 → hap-sign-tool 签名成功 → `bm dump` 显示 release），但 `hdc install` 报：
+
+```
+error: failed to install bundle. code:9568322
+error: signature verification failed due to not trusted app source
+```
+
+对应官方 FAQ《使用 hdc 命令安装 release HAP 包到设备时上报 INSTALL_FAILED_APP_SOURCE_NOT_TRUSTED》原文：
+**「AGC 发布的证书仅支持上架使用，不支持本地安装。签名中心只为预置应用申请 Profile，不支持本地调试。」**
+
+因此鸿蒙上"发给任意用户侧载"**只有以下几类可行路径**：
+
+| 路径 | 可行性 | 说明 |
+|---|---|---|
+| ① 调试证书 + 调试 Profile（设备白名单） | ✅ 可本地安装 | Profile 需勾选目标设备 UDID（上限约 100 台，Profile 有有效期）。粉丝把 UDID 给你 → AGC 加到调试 Profile → 重新签名出包。适合小范围/好友 |
+| ② 上架 AppGallery | ✅ 可分发，但需合规 | 用户已排除上架；游戏类还需版号等资质 |
+| ③ AppGallery「内部测试/邀请测试」 | ⚠️ 可评估 | 观众用华为账号加入测试列表后从市场安装；是否需要版号按当期政策确认 |
+| ④ 源码 + 粉丝自行构建 | ✅ 无需签名分发 | 粉丝装 DevEco → 打开仓库 → 自动签名（把**自己设备**加入调试 Profile）→ 安装。与 GPLv3 源码开放天然契合 |
+| ⑤ 企业内部应用分发 | ⚠️ 需企业开发者资质 | 组织内分发 |
+
+> 结论建议：面向 B 站观众，**④ 源码自编译** 或 **③ 内部测试** 最现实；小范围测试用 **①**。
+
+## 0.1 已验证可用的发布签名命令（将来上架/内部测试时使用）
+
+```powershell
+# 1) 未签名 release 构建（build-profile.json5 中 signingConfigs 置空）
+devecocli build --product default --build-mode release
+#    → entry/build/default/outputs/default/entry-default-unsigned.hap
+
+# 2) 用发布证书链签名（hap-sign-tool 提供明文密码入口，绕开 DevEco 加密格式）
+& "E:\DevEco Studio\jbr\bin\java.exe" -jar "E:\DevEco Studio\sdk\default\openharmony\toolchains\lib\hap-sign-tool.jar" sign-app `
+  -mode localSign -keyAlias xir_09 -keyPwd <pwd> `
+  -appCertFile "C:\Users\XIR09\Downloads\xir_09.cer" `
+  -profileFile "C:\Users\XIR09\Downloads\shattered pixel dungeonRelease.p7b" `
+  -inFile  entry\build\default\outputs\default\entry-default-unsigned.hap `
+  -signAlg SHA256withECDSA -keystoreFile "C:\Users\XIR09\xir.p12" -keystorePwd <pwd> `
+  -outFile entry\build\default\outputs\default\entry-default-signed.hap `
+  -inForm zip -compatibleVersion 26
+```
+
+两个实测坑：
+- **`-appCertFile` 必须是证书链**：AGC 下载的 `.cer` 实际含 3 段 PEM（Root CA G2 → Developer Relations CA G2 → 你的发布证书）。用 .NET `X509Certificate2(file)` 只读到第一段会误判成"只有根证书"；用 `hap-sign-tool` 前也不要自己截取单张证书，否则报 `Profile cert must a cert chain`。
+- **hvigor `signingConfigs` 的密码必须是 DevEco 加密串**（长度 ≥32），明文直接报 `The length of the storePassword or keyPassword field ... is less than 32`。所以 CLI 场景走上面的 hap-sign-tool，或改用 DevEco 界面配置。
+
+---
+
+## 1. 为什么调试签名只适合自己/白名单设备
 
 当前 `build-profile.json5` 的 `signingConfigs` 指向 DevEco 自动生成的**调试材料**：
 
@@ -12,11 +60,16 @@
 
 调试签名的问题：
 
-- **调试 Profile（.p7b）内含"调试设备列表"（UDID 白名单）**：只有列表里的设备能安装，观众手机装不上；
+- **调试 Profile（.p7b）内含"调试设备列表"（UDID 白名单）**：只有列表里的设备能安装；
 - 调试证书有较短有效期，过期后需重新签名；
 - 调试包带 `debuggable` 属性。
 
-**发布证书 + 发布 Profile 签名的 HAP 不限制设备**，可直接通过文件管理器 / `hdc install` 侧载，无需上架商店。
+**要给别人装**：把对方设备的 UDID 加入**调试 Profile**（AGC → 证书、APP ID 和 Profile → Profile → 调试类型 → 编辑设备列表），重新签名后即可本地安装（单个 Profile 上限约 100 台设备）。
+
+## 1.1 发布证书（AGC）的真实用途
+
+发布证书 + 发布 Profile 签出的包**只能上架 AppGallery / 内部测试渠道**分发，**不能** `hdc install`（见 §0 实测）。
+已备好可复用材料（不要提交进仓库）：`C:\Users\XIR09\xir.p12`（alias `xir_09`）、`C:\Users\XIR09\Downloads\xir_09.cer`（证书链）、`C:\Users\XIR09\Downloads\shattered pixel dungeonRelease.p7b`（bundleName `com.xir9.spd`，有效期至 2029-11-09）。
 
 ## 2. 准备（一次性）
 
