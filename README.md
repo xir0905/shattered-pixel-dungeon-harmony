@@ -35,6 +35,7 @@ Shattered Pixel Dungeon 以 **GNU GPLv3** 发布。本移植工程（含 ArkTS �
    - 或 PC 连接设备后：`hdc install xxx.hap`
 3. 系统要求：HarmonyOS API 26（HarmonyOS 6.0/7.0）及以上
 4. 数据：存档保存在应用沙箱（`files/spd-store/`），卸载应用会一并删除
+5. **存档备份**：在任意界面**三连击屏幕顶部黑边** → 打开「存档备份」面板 → 导出（保存为 JSON 文件）/ 导入（选择 JSON，导入后应用自动重启）。用于换机、重装或改包名迁移
 
 ## 构建（开发者）
 

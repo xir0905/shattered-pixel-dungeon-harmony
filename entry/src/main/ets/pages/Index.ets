@@ -15,7 +15,8 @@
 
 import { webview } from '@kit.ArkWeb';
 import { common } from '@kit.AbilityKit';
-import { fileIo as fs } from '@kit.CoreFileKit';
+import { fileIo as fs, picker } from '@kit.CoreFileKit';
+import { util } from '@kit.ArkTS';
 import { window } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
 
@@ -70,6 +71,25 @@ function mimeOf(path: string): string {
     return 'text/plain';
   }
   return 'application/octet-stream';
+}
+
+/** Two-digit zero padding for the backup file name stamp. */
+function pad2(n: number): string {
+  return n < 10 ? '0' + n : '' + n;
+}
+
+/** One key/value pair inside a save-backup file (D-8). */
+class SpdEntry {
+  key: string = '';
+  value: string = '';
+}
+
+/** Backup file layout — plain JSON so it stays inspectable and portable. */
+class SpdDump {
+  format: string = 'spd-save-backup';
+  version: number = 1;
+  createdAt: string = '';
+  entries: SpdEntry[] = [];
 }
 
 /**
@@ -193,6 +213,48 @@ class SpdNativeStore {
       return '';
     }
   }
+
+  /** How many keys are currently stored (for user feedback). */
+  countKeys(): number {
+    const joined: string = this.spdKeys();
+    return joined.length === 0 ? 0 : joined.split('\u0001').length;
+  }
+
+  /** Serialize every stored key/value into a portable JSON backup (D-8). */
+  dumpAll(): string {
+    const dump: SpdDump = new SpdDump();
+    dump.createdAt = new Date().toISOString();
+    const joined: string = this.spdKeys();
+    const keys: string[] = joined.length === 0 ? [] : joined.split('\u0001');
+    for (let i = 0; i < keys.length; i++) {
+      const entry: SpdEntry = new SpdEntry();
+      entry.key = keys[i];
+      entry.value = this.spdGet(keys[i]);
+      dump.entries.push(entry);
+    }
+    return JSON.stringify(dump);
+  }
+
+  /** Restore a backup produced by dumpAll(); returns how many keys were
+   * written. Keys present in the backup overwrite same-name entries; other
+   * existing keys are left alone (merge semantics). */
+  restoreAll(text: string): number {
+    const dump: SpdDump = JSON.parse(text) as SpdDump;
+    if (dump === null || dump === undefined || dump.entries === null || dump.entries === undefined) {
+      throw new Error('invalid backup file: entries missing');
+    }
+    let written: number = 0;
+    for (let i = 0; i < dump.entries.length; i++) {
+      const entry: SpdEntry = dump.entries[i];
+      if (entry !== null && entry !== undefined &&
+        typeof entry.key === 'string' && entry.key.length > 0 &&
+        typeof entry.value === 'string') {
+        this.spdPut(entry.key, entry.value);
+        written++;
+      }
+    }
+    return written;
+  }
 }
 
 @Entry
@@ -261,6 +323,112 @@ struct Index {
     }
   }
 
+  // ---- Save backup / restore (D-8) --------------------------------------
+  // Trigger: triple-tap the top black safe-area band (dead space, so no
+  // accidental in-game taps). Export writes a portable JSON to a user-chosen
+  // location; import merges keys back into the native spd-store and then
+  // closes the app so the game reloads the imported saves.
+  @State backupOpen: boolean = false;
+  @State backupMsg: string = '';
+  private bandTaps: number[] = [];
+
+  private onBandTap(): void {
+    const now: number = Date.now();
+    this.bandTaps = this.bandTaps.filter((t: number) => now - t < 1500);
+    this.bandTaps.push(now);
+    if (this.bandTaps.length >= 3) {
+      this.bandTaps = [];
+      this.backupMsg = '';
+      this.backupOpen = !this.backupOpen;
+    }
+  }
+
+  private exportSaves(): void {
+    const ctx = getContext(this) as common.UIAbilityContext;
+    try {
+      const opts: picker.DocumentSaveOptions = new picker.DocumentSaveOptions();
+      const d: Date = new Date();
+      opts.newFileNames = [
+        'spd-saves-' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) +
+        '-' + pad2(d.getHours()) + pad2(d.getMinutes()) + '.json'
+      ];
+      const docPicker: picker.DocumentViewPicker = new picker.DocumentViewPicker(ctx);
+      docPicker.save(opts).then((uris: string[]) => {
+        if (uris === null || uris === undefined || uris.length === 0) {
+          return;
+        }
+        try {
+          const content: string = this.spdStore.dumpAll();
+          const file: fs.File = fs.openSync(uris[0], fs.OpenMode.READ_WRITE | fs.OpenMode.TRUNC);
+          try {
+            fs.writeSync(file.fd, content);
+            fs.fsyncSync(file.fd);
+          } finally {
+            fs.closeSync(file);
+          }
+          this.backupMsg = '已导出 ' + this.spdStore.countKeys() + ' 项存档数据';
+        } catch (e) {
+          console.error(`[SPD] export write failed: ${e}`);
+          this.backupMsg = '导出失败：写入目标文件出错';
+        }
+      }).catch((err: BusinessError) => {
+        console.error(`[SPD] export picker failed: ${JSON.stringify(err)}`);
+        this.backupMsg = '导出取消或失败';
+      });
+    } catch (e) {
+      console.error(`[SPD] export init failed: ${e}`);
+      this.backupMsg = '导出初始化失败';
+    }
+  }
+
+  private importSaves(): void {
+    const ctx = getContext(this) as common.UIAbilityContext;
+    try {
+      const opts: picker.DocumentSelectOptions = new picker.DocumentSelectOptions();
+      opts.maxSelectNumber = 1;
+      opts.fileSuffixFilters = ['.json'];
+      const docPicker: picker.DocumentViewPicker = new picker.DocumentViewPicker(ctx);
+      docPicker.select(opts).then((uris: string[]) => {
+        if (uris === null || uris === undefined || uris.length === 0) {
+          return;
+        }
+        try {
+          // Picker URIs are best accessed through openSync + read; readTextSync
+          // does not reliably accept document-provider URIs.
+          let text: string = '';
+          const file: fs.File = fs.openSync(uris[0], fs.OpenMode.READ_ONLY);
+          try {
+            const stat: fs.Stat = fs.statSync(file.fd);
+            const buf: ArrayBuffer = new ArrayBuffer(stat.size);
+            fs.readSync(file.fd, buf);
+            const decoder: util.TextDecoder = util.TextDecoder.create('utf-8');
+            text = decoder.decodeToString(new Uint8Array(buf));
+          } finally {
+            fs.closeSync(file);
+          }
+          const n: number = this.spdStore.restoreAll(text);
+          this.backupMsg = '已导入 ' + n + ' 项，应用即将关闭，请重新打开';
+          setTimeout(() => {
+            try {
+              ctx.terminateSelf();
+            } catch (e) {
+              console.error(`[SPD] terminateSelf after import failed: ${e}`);
+            }
+          }, 1200);
+        } catch (e) {
+          console.error(`[SPD] import failed: ${e}`);
+          this.backupMsg = '导入失败：文件读取或格式错误';
+        }
+      }).catch((err: BusinessError) => {
+        console.error(`[SPD] import picker failed: ${JSON.stringify(err)}`);
+        this.backupMsg = '导入取消或失败';
+      });
+    } catch (e) {
+      console.error(`[SPD] import init failed: ${e}`);
+      this.backupMsg = '导入初始化失败';
+    }
+  }
+
   // HarmonyOS back gesture -> in-game BACK action, matching SPD on other
   // platforms. SPD binds Escape (keyCode 27) to GameAction.BACK
   // (SPDAction.java defaultBindings); DefaultGwtInput listens for keydown/
@@ -317,10 +485,14 @@ struct Index {
       Column() {
         if (this.topInsetVp > 0) {
           // Black band under the camera/notch; the game canvas starts below it.
+          // Triple-tap it (dead space) to open the save backup panel (D-8).
           Row()
             .width('100%')
             .height(this.topInsetVp)
             .backgroundColor(Color.Black)
+            .onClick(() => {
+              this.onBandTap();
+            })
         }
         Web({ src: BASE_URL + 'index.html', controller: this.controller })
           .width('100%')
@@ -416,6 +588,54 @@ struct Index {
         .height('100%')
         .backgroundColor(Color.Black)
         .justifyContent(FlexAlign.Center)
+      }
+
+      // Save backup panel (D-8), opened by triple-tapping the top black band.
+      if (this.backupOpen) {
+        Column() {
+          Column({ space: 14 }) {
+            Text('存档备份')
+              .fontColor('#e8e8e8')
+              .fontSize(20)
+            Text('导出：保存到文件，用于换机或重装后恢复\n导入：合并同名存档，完成后应用自动关闭')
+              .fontColor('#9a9a9a')
+              .fontSize(14)
+              .textAlign(TextAlign.Center)
+            Button('导出存档')
+              .width(240)
+              .onClick(() => {
+                this.exportSaves();
+              })
+            Button('导入存档')
+              .width(240)
+              .onClick(() => {
+                this.importSaves();
+              })
+            Button('关闭')
+              .width(240)
+              .backgroundColor('#3a3a3a')
+              .onClick(() => {
+                this.backupOpen = false;
+                this.backupMsg = '';
+              })
+            if (this.backupMsg.length > 0) {
+              Text(this.backupMsg)
+                .fontColor('#d8c98a')
+                .fontSize(13)
+                .textAlign(TextAlign.Center)
+            }
+          }
+          .padding(24)
+          .borderRadius(16)
+          .backgroundColor('#2a2a2a')
+        }
+        .width('100%')
+        .height('100%')
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor('#000000c0')
+        .onClick(() => {
+          // swallow taps so they never reach the game canvas behind the panel
+        })
       }
     }
     .width('100%')
