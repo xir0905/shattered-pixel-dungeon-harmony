@@ -37,6 +37,8 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
 │   │   └── gdx-backend-gwt/.../GwtGraphics.java    ← getDensity override（糊字修复配套）
 │   └── html/src/.../HtmlLauncher.java  ← usePhysicalPixels 配置
 ├── tools/
+│   ├── build-all.ps1                    ← 一键构建链（GWT→sync→HAP→install→start）
+│   ├── measure-startup.ps1              ← 冷启动耗时测量（C-3 基线工具）
 │   ├── sync-gwt.js                     ← dist → rawfile 同步 + 自动 GL 补丁
 │   ├── patch-gwt-gl.js                 ← 产物级 GL 补丁（安全网，幂等）
 │   ├── backup/*.orig                   ← 补丁前产物备份（32MB，取证用）
@@ -129,6 +131,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 | 视口 | 388×800 CSS px / 1261×2600 backing / zoom 9 |
 | 属性文件位置参数 | 全语言 8699 处（zh 339 处，`%n$` 语法；207 个 properties 文件） |
 | GWT 编译耗时 / HAP 构建 | ~3min / ~35s |
+| 冷启动（标题可交互） | ≈3.7~4.2s（C-3 基线，`spec/startup-time.md`） |
 
 ## 7. 许可
 
