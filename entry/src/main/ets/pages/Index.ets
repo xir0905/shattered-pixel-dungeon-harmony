@@ -279,7 +279,7 @@ struct Index {
         .horizontalScrollBarAccess(false)
         .verticalScrollBarAccess(false)
         .overScrollMode(OverScrollMode.NEVER)
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
         .onInterceptRequest((event) => {
           if (!event) {
             return this.notFound();
