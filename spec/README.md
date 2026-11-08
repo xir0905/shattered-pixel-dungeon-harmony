@@ -22,7 +22,7 @@ entry-default-signed.hap → hdc install -r → ArkWeb WebView 加载运行
 - HAP bundle：`com.example.shatteredpixeldungeon`，API 26（HarmonyOS 7.0）
 - 承载方式：`entry/src/main/ets/pages/Index.ets` 的 ArkWeb WebView
 - GWT 平台缺口（emul/后端 bug）用 **`html/patches/` 覆盖机制**解决：`html/build.gradle` 用 patches 目录里的源文件覆盖 gdx / gwt-user 的 sources jar，重编译即生效
-- 存档：**localStorage**（自建 `LocalStorageFileHandle` 补丁，`gdxfile:`/`gdxmtime:` 键；后台化自动 saveAll）。⚠️ localStorage 磁盘持久性缺陷已坐实（渲染进程惰性落盘，非正常退出丢进度，P0 修复中），见 `savegame-loss.md`
+- 存档：**原生 spd-store 文件为主 + localStorage 副本**（C-8 后架构）：`LocalStorageFileHandle` 全部读写经 `SpdStore` 门面 → `window.spdNative` 同步 bridge（`Index.ets` `SpdNativeStore`，`javaScriptProxy` 注入）→ `<filesDir>/spd-store/` fsynced 文件（tmp→write→fsync→rename 原子替换）；localStorage 保留为迁移源/回滚副本（双写双删）。冷启动空窗口与渲染进程惰性落盘丢档均已消除，见 `savegame-loss.md`
 
 ## 2. 目录结构
 
@@ -52,7 +52,7 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
     ├── rendering-sharpness.md          ← 像素字体糊字修复
     ├── startup-time.md / fps-profiling.md / memory-gc.md   ← C 组：启动/帧率/内存基线
     ├── background-reclaim.md           ← 后台回收：存档架构（localStorage）与落盘验证
-    ├── savegame-loss.md                ← P0：存档丢失事件与 localStorage 磁盘持久性分析（C-8）
+    ├── savegame-loss.md                ← C-8：存档丢失事件分析 + 原生 spd-store 修复（已验证）
     ├── appfreeze-analysis.md           ← appfreeze 归档日志分析（模拟器环境特性）
     ├── audio-loop-arkweb.md            ← D-1b：EOS 音乐死亡（上游 ended 回调未绑定）
     ├── rotation-resize.md              ← D-4：横屏/分屏 resize 链验证与 zoom 公式

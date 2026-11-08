@@ -15,6 +15,7 @@
 
 import { webview } from '@kit.ArkWeb';
 import { common } from '@kit.AbilityKit';
+import { fileIo as fs } from '@kit.CoreFileKit';
 
 const BASE_URL: string = 'http://spd.local/';
 
@@ -63,6 +64,129 @@ function mimeOf(path: string): string {
   return 'application/octet-stream';
 }
 
+/**
+ * Native-side KV store for the game's local files (C-8 save persistence).
+ *
+ * Exposed to the WebView as window.spdNative via javaScriptProxy and called
+ * synchronously from the patched gdx backend (SpdStore.java /
+ * LocalStorageFileHandle.java). Each localStorage-style key is persisted as
+ * one UTF-8 file under <filesDir>/spd-store, named by encodeURIComponent(key).
+ *
+ * Every write goes through tmp -> write -> fsync -> rename so a process kill
+ * mid-write can never truncate a previously-good file: the destination is
+ * only ever replaced by an already-fsynced rename (POSIX atomic replace).
+ * This is the fix for saves vanishing when the system reclaims the render
+ * process hosting WebView localStorage (lazy on-disk flush) — see
+ * spec/savegame-loss.md.
+ */
+class SpdNativeStore {
+  private dirPath: string = '';
+
+  /** Resolve the sandbox directory once; called from aboutToAppear so the
+   * context is ready before the Web component captures this object. */
+  attach(context: common.UIAbilityContext): void {
+    if (this.dirPath !== '') {
+      return;
+    }
+    const dir: string = context.filesDir + '/spd-store';
+    try {
+      if (!fs.accessSync(dir)) {
+        fs.mkdirSync(dir, true);
+      }
+      this.dirPath = dir;
+    } catch (e) {
+      console.error(`[SPD] spd-store init failed, native bridge disabled: ${e}`);
+    }
+  }
+
+  private fileOf(key: string): string {
+    return this.dirPath + '/' + encodeURIComponent(key);
+  }
+
+  spdPut(key: string, value: string): void {
+    if (this.dirPath === '') {
+      return;
+    }
+    const target: string = this.fileOf(key);
+    const tmp: string = target + '.tmp';
+    try {
+      const file: fs.File = fs.openSync(tmp, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE | fs.OpenMode.TRUNC);
+      try {
+        fs.writeSync(file.fd, value);
+        fs.fsyncSync(file.fd);
+      } finally {
+        fs.closeSync(file);
+      }
+      fs.renameSync(tmp, target);
+    } catch (e) {
+      console.error(`[SPD] spdPut failed (key ${key}, value ${value.length} chars): ${e}`);
+    }
+  }
+
+  spdExists(key: string): boolean {
+    if (this.dirPath === '') {
+      return false;
+    }
+    try {
+      return fs.accessSync(this.fileOf(key));
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /** Only meaningful after spdExists(key) returned true; returns '' on error. */
+  spdGet(key: string): string {
+    if (this.dirPath === '') {
+      return '';
+    }
+    try {
+      return fs.readTextSync(this.fileOf(key));
+    } catch (e) {
+      console.error(`[SPD] spdGet failed for ${key}: ${e}`);
+      return '';
+    }
+  }
+
+  spdDel(key: string): void {
+    if (this.dirPath === '') {
+      return;
+    }
+    try {
+      fs.unlinkSync(this.fileOf(key));
+    } catch (e) {
+      // deleting a key that is not present is a no-op
+    }
+  }
+
+  /** All stored keys joined with \u0001 (never appears in gdx keys); '' when
+   * empty or unavailable. Mirrors the facade contract in SpdStore.java. */
+  spdKeys(): string {
+    if (this.dirPath === '') {
+      return '';
+    }
+    try {
+      const names: string[] = fs.listFileSync(this.dirPath);
+      const out: string[] = [];
+      for (let i = 0; i < names.length; i++) {
+        const name: string = names[i];
+        if (name.endsWith('.tmp')) {
+          continue;
+        }
+        try {
+          out.push(decodeURIComponent(name));
+        } catch (e) {
+          // skip undecodable leftovers (e.g. crashed tmp writes are filtered
+          // above; anything else here is not ours)
+        }
+      }
+      return out.join('\u0001');
+    } catch (e) {
+      console.error(`[SPD] spdKeys failed: ${e}`);
+      return '';
+    }
+  }
+}
+
 @Entry
 @Component
 struct Index {
@@ -72,8 +196,14 @@ struct Index {
   // in case console forwarding ever breaks, so the overlay can never stick.
   @State gameReady: boolean = false;
 
+  // Native file-backed KV store for the game's saves; wired into the WebView
+  // as window.spdNative before the first page load (C-8). All reads/writes
+  // from the game are synchronous bridge calls — see SpdNativeStore above.
+  private spdStore: SpdNativeStore = new SpdNativeStore();
+
   aboutToAppear(): void {
     webview.WebviewController.setWebDebuggingAccess(true);
+    this.spdStore.attach(getContext(this) as common.UIAbilityContext);
     setTimeout(() => {
       this.gameReady = true;
     }, 20000);
@@ -138,6 +268,12 @@ struct Index {
         .backgroundColor(Color.Black)
         .javaScriptAccess(true)
         .domStorageAccess(true)
+        .javaScriptProxy({
+          object: this.spdStore,
+          name: 'spdNative',
+          methodList: ['spdPut', 'spdGet', 'spdExists', 'spdDel', 'spdKeys'],
+          controller: this.controller
+        })
         .fileAccess(true)
         .multiWindowAccess(false)
         .horizontalScrollBarAccess(false)

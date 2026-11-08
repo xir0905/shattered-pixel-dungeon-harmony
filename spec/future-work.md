@@ -31,7 +31,8 @@
 - [x] **后台回收策略**（2026-11-08 完成，C-6）：**杀后台进程不丢进度**。实测：后台化瞬间 `visibilitychange→pause→GameScene.onPause→Dungeon.saveAll` 自动落盘（localStorage mtime/hash 实测更新）；force-stop 后冷启动 16 个存档文件逐字节存活，继续游戏恢复第 1 层。架构修正：存档在 **localStorage**（自建 LocalStorageFileHandle 补丁，`gdxfile:`/`gdxmtime:` 键），非 IndexedDB。工具 `spd_save_probe.js`，详见 `spec/background-reclaim.md`。
   - ⚠️ **2026-11-09 降级说明**：C-6 的"force-stop 存活"结论可能由**渲染进程幸存**掩盖（`:render` 进程是 nwebspawn 子进程，force-stop 只杀 app 进程）——不构成磁盘落盘证明。localStorage 磁盘持久性缺陷与存档丢失事件见 C-8 / `spec/savegame-loss.md`。
 - [x] **appfreeze 排查**（2026-11-08 完成，C-7）：两份归档日志（合计 538KB）均为**模拟器** THREAD_BLOCK_6S，主线程栈卡在 ArkWeb 引擎同步初始化（`NWebHelper::GetWebEngine` → `libarkweb_engine.so`）——**门 bug/GL 死循环嫌疑被栈证据否定**（门 bug 在 nwebspawn 渲染进程，结构上不可能阻塞应用主线程）。真机 ArkWeb 初始化仅 ~0.7s（C-3 实测），修复期至今真机大量冷启动/游玩零冻结。结论：平台/模拟器环境特性，真机不受影响，不改代码关闭。详见 `spec/appfreeze-analysis.md`。
-- [ ] **存档磁盘持久化加固**（P0，2026-11-09 立项，C-8）：**localStorage 磁盘持久性缺陷已坐实**——pid 52815 会话中存在的 2 级存档（seed RHT-RHB-RQF）在锁屏回收（渲染进程被杀）后彻底丢失；冷启动 +11s 存在 localStorage 异步加载空窗口（`checkAll()==0` 误判）。根因：localStorage 宿主在独立 `:render` 渲染进程（nwebspawn 子进程），落盘惰性，非正常死亡丢失未落盘写入。修复主方案：JS bridge（`registerJavaScriptProxy`）镜像 `gdxfile:*`/`gdxmtime:*` 到 ArkTS 原生文件（fsync 可靠层）+ 启动时 `runJavaScriptOnDocumentStart` 回灌（顺带消除空窗口）。完整分析、时间线与验证矩阵见 `spec/savegame-loss.md`。
+- [x] **存档磁盘持久化加固**（2026-11-09 完成，C-8，P0）：**Design B-lazy 实施**（原生为主 + localStorage 迁移源/副本，替代原 Design A 镜像方案——A 保留 LS 读取路径，异步加载 clobber 风险仍在）。实现：`Index.ets` `SpdNativeStore`（`javaScriptProxy` 注入 `window.spdNative` 同步 KV：put=tmp→write→fsync→rename 原子写、exists/get/del/keys，存 `<filesDir>/spd-store/`）+ 新 `SpdStore.java` 门面（读：native→miss 查 LS 懒迁移；写：双写；删：双删防复活；keys 合并；bridge 缺席优雅降级纯 LS）+ `LocalStorageFileHandle.java` 全部存储调用改走门面。真机验证全过：懒迁移 15 键 ✅、冷启动空窗口消除（重启 10s 达标题、1.8s 内 5 档全显，旧版 +11s）✅、saveAll 双写（pos 991→1026 native/LS 同步）✅、force-stop 全杀→重启 pos=1026 精确恢复 ✅、覆盖安装 ✅。完整分析/架构图/验证矩阵见 `spec/savegame-loss.md`。遗留：`settings.xml:*`（gdx Preferences）不走 FileHandle、仍纯 LS，渲染进程回收时设置项可能回退（低危，见下条）。
+- [ ] **gdx Preferences 原生化**（P3，2026-11-09 发现，C-9）：`settings.xml:*` 键由 GWT 后端 Preferences 直接写 localStorage（不经 LocalStorageFileHandle/SpdStore 门面），渲染进程非正常死亡时设置项（亮度/缩放/开关等）可能丢失/回退（低危，非存档）。可复用 spdNative bridge 让 Preferences 同走原生文件。
 
 ## D. 平台集成 / 功能补全（P2）
 
@@ -42,7 +43,7 @@
 - [x] **震动反馈**（2026-11-08 完成，D-5）：**零补丁完成**——ArkWeb 原生实现 `navigator.vibrate`（探测返回 true，真实震动），SPD 调用链断点仅在上游 `DefaultGwtInput.vibrate` 空实现；`HtmlPlatformSupport` 补 `vibrate()` override → JSNI `navigator.vibrate`（html 模块自有文件，无需 patches overlay）。真机 E2E 验证：CDP `Input.dispatchTouchEvent` 长按背包物品 1s → tooltip 弹出 + spy 捕获 `navigator.vibrate(50)`（`SPDSettings.vibration()` 默认开，设置开关由 `supportsVibration()` 自动使能）。详见 `spec/vibration.md`。
 - [x] **多指/手势冲突**（2026-11-09 完成，D-6）：**无冲突，零改动**。边缘 tap 全部直达 canvas（spy `target=CANVAS`，4 边坐标精确）且游戏真实消费（hero 移动，存档 pos 1129→1056 落盘）；双指同触=2 个独立 touchstart，无崩溃无卡死；左缘横滑→系统返回手势（不进 WebView）→ onBackPress→Escape→WndGame 菜单；底部上滑→Home（不进 WebView）→后台化+saveAll。分工模型：系统留边缘**滑动**（返回/Home），游戏收边缘**点触**。坐标映射修正：WebView 顶部 122px 状态栏偏移，`CSS_y=(物理y−122)/3.25`。详见 `spec/gestures.md`。
 - [ ] **应用图标/启动页美化**：当前默认图标；设计 SPD 主题图标 + 启动闪屏，消除冷启动白屏观感。
-- [ ] **存档导出/备份**：localStorage 存档（`gdxfile:`/`gdxmtime:` 键）→ 导出到用户文件（供换机/重装恢复）；HarmonyOS 应用数据沙箱说明。
+- [ ] **存档导出/备份**：spd-store 原生文件（`<filesDir>/spd-store/`，encodeURIComponent 文件名）→ 导出到用户文件（供换机/重装恢复）；C-8 的 spdNative bridge（`SpdNativeStore`/`SpdStore.java`）可直接复用做导出通道；HarmonyOS 应用数据沙箱说明。
 - [ ] **深色模式**：启动页/WebView 背景色跟随系统深色。
 
 ## E. 发布准备（P2-P3）

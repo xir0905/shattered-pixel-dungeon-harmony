@@ -34,19 +34,23 @@ import java.util.ArrayList;
 import com.badlogic.gdx.Files.FileType;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.google.gwt.storage.client.Storage;
 
 /**
- * PATCHED for Shattered Pixel Dungeon (GWT web port): a localStorage-backed
- * FileHandle for FileType.Local, restoring the local file support that the
- * 1.14.0 GWT backend dropped (it only supports Internal/Classpath reads).
+ * PATCHED for Shattered Pixel Dungeon (GWT web port): a FileHandle for
+ * FileType.Local, restoring the local file support that the 1.14.0 GWT
+ * backend dropped (it only supports Internal/Classpath reads).
  *
- * Files are stored as UTF-8 strings under "gdxfile:&lt;path&gt;" localStorage
+ * Files are stored as UTF-8 strings under "gdxfile:&lt;path&gt;" storage
  * keys with a companion "gdxmtime:&lt;path&gt;" last-modified entry. Directories
  * exist implicitly whenever keys with a "&lt;path&gt;/" prefix exist, so the
  * root "" is always a directory. The game's saves, rankings, journal, badges
  * etc. are all JSON text written through com.watabou.utils.Bundle, so string
  * storage is lossless.
+ *
+ * All storage access goes through the {@link SpdStore} facade (C-8): the
+ * synchronous ArkTS bridge (window.spdNative, fsynced files in the app
+ * sandbox) is the primary backend, with browser localStorage as lazy
+ * migration source, fallback and secondary copy.
  */
 public class LocalStorageFileHandle extends FileHandle {
 
@@ -57,10 +61,6 @@ public class LocalStorageFileHandle extends FileHandle {
 
 	public LocalStorageFileHandle (String path) {
 		this.path = fixSlashes(path);
-	}
-
-	private static Storage storage () {
-		return GwtFiles.LocalStorage;
 	}
 
 	private static String fixSlashes (String path) {
@@ -111,33 +111,26 @@ public class LocalStorageFileHandle extends FileHandle {
 	}
 
 	public boolean exists () {
-		Storage s = storage();
-		if (s == null) return false;
-		if (s.getItem(KEY_PREFIX + path) != null) return true;
+		if (SpdStore.getItem(KEY_PREFIX + path) != null) return true;
 		return isDirectory();
 	}
 
 	public boolean isDirectory () {
 		if (path.isEmpty()) return true;
-		Storage s = storage();
-		if (s == null) return false;
-		if (s.getItem(KEY_PREFIX + path) != null) return false;
+		if (SpdStore.getItem(KEY_PREFIX + path) != null) return false;
 		String prefix = KEY_PREFIX + path + "/";
-		for (int i = 0; i < s.getLength(); i++) {
-			String key = s.key(i);
-			if (key != null && key.startsWith(prefix)) return true;
+		for (String key : SpdStore.keys()) {
+			if (key.startsWith(prefix)) return true;
 		}
 		return false;
 	}
 
 	public FileHandle[] list () {
-		Storage s = storage();
-		if (s == null || !isDirectory()) return new FileHandle[0];
+		if (!isDirectory()) return new FileHandle[0];
 		String prefix = path.isEmpty() ? KEY_PREFIX : KEY_PREFIX + path + "/";
 		ArrayList<String> names = new ArrayList<String>();
-		for (int i = 0; i < s.getLength(); i++) {
-			String key = s.key(i);
-			if (key == null || !key.startsWith(prefix)) continue;
+		for (String key : SpdStore.keys()) {
+			if (!key.startsWith(prefix)) continue;
 			String rest = key.substring(prefix.length());
 			if (rest.isEmpty()) continue;
 			int slash = rest.indexOf('/');
@@ -178,31 +171,27 @@ public class LocalStorageFileHandle extends FileHandle {
 	}
 
 	public boolean delete () {
-		Storage s = storage();
-		if (s == null) return false;
 		if (isDirectory()) return false;
-		boolean existed = s.getItem(KEY_PREFIX + path) != null;
-		s.removeItem(KEY_PREFIX + path);
-		s.removeItem(MTIME_PREFIX + path);
+		boolean existed = SpdStore.getItem(KEY_PREFIX + path) != null;
+		SpdStore.removeItem(KEY_PREFIX + path);
+		SpdStore.removeItem(MTIME_PREFIX + path);
 		return existed;
 	}
 
 	public boolean deleteDirectory () {
-		Storage s = storage();
-		if (s == null) return false;
-		ArrayList<String> doomed = collectSelfAndChildren(s);
+		if (!SpdStore.anyAvailable()) return false;
+		ArrayList<String> doomed = collectSelfAndChildren();
 		for (int i = 0; i < doomed.size(); i++) {
-			s.removeItem(doomed.get(i));
+			SpdStore.removeItem(doomed.get(i));
 		}
 		return true;
 	}
 
 	public void emptyDirectory () {
-		Storage s = storage();
-		if (s == null) return;
-		ArrayList<String> doomed = collectSelfAndChildren(s);
+		if (!SpdStore.anyAvailable()) return;
+		ArrayList<String> doomed = collectSelfAndChildren();
 		for (int i = 0; i < doomed.size(); i++) {
-			s.removeItem(doomed.get(i));
+			SpdStore.removeItem(doomed.get(i));
 		}
 	}
 
@@ -210,11 +199,9 @@ public class LocalStorageFileHandle extends FileHandle {
 		emptyDirectory();
 	}
 
-	private ArrayList<String> collectSelfAndChildren (Storage s) {
+	private ArrayList<String> collectSelfAndChildren () {
 		ArrayList<String> doomed = new ArrayList<String>();
-		for (int i = 0; i < s.getLength(); i++) {
-			String key = s.key(i);
-			if (key == null) continue;
+		for (String key : SpdStore.keys()) {
 			String payload;
 			if (key.startsWith(KEY_PREFIX)) {
 				payload = key.substring(KEY_PREFIX.length());
@@ -234,35 +221,27 @@ public class LocalStorageFileHandle extends FileHandle {
 		if (!(dest instanceof LocalStorageFileHandle)) {
 			throw new GdxRuntimeException("copyTo target must be a local file: " + dest);
 		}
-		Storage s = storage();
-		if (s == null) throw new GdxRuntimeException("localStorage unavailable");
-		String content = s.getItem(KEY_PREFIX + path);
+		if (!SpdStore.anyAvailable()) throw new GdxRuntimeException("no storage backend available");
+		String content = SpdStore.getItem(KEY_PREFIX + path);
 		((LocalStorageFileHandle)dest).store(content == null ? "" : content, false);
-		String mtime = s.getItem(MTIME_PREFIX + path);
-		if (mtime != null) s.setItem(MTIME_PREFIX + dest.path(), mtime);
+		String mtime = SpdStore.getItem(MTIME_PREFIX + path);
+		if (mtime != null) SpdStore.setItem(MTIME_PREFIX + dest.path(), mtime);
 	}
 
 	public void moveTo (FileHandle dest) {
 		if (dest.path().equals(path)) return;
 		copyTo(dest);
-		Storage s = storage();
-		if (s == null) return;
-		s.removeItem(KEY_PREFIX + path);
-		s.removeItem(MTIME_PREFIX + path);
+		SpdStore.removeItem(KEY_PREFIX + path);
+		SpdStore.removeItem(MTIME_PREFIX + path);
 	}
 
 	public long length () {
-		Storage s = storage();
-		if (s == null) return 0;
-		String content = s.getItem(KEY_PREFIX + path);
-		if (content == null) return 0;
-		return content.length();
+		String content = SpdStore.getItem(KEY_PREFIX + path);
+		return content == null ? 0 : content.length();
 	}
 
 	public long lastModified () {
-		Storage s = storage();
-		if (s == null) return 0;
-		String mtime = s.getItem(MTIME_PREFIX + path);
+		String mtime = SpdStore.getItem(MTIME_PREFIX + path);
 		if (mtime == null) return 0;
 		try {
 			return Long.parseLong(mtime);
@@ -272,21 +251,19 @@ public class LocalStorageFileHandle extends FileHandle {
 	}
 
 	private void store (String content, boolean append) {
-		Storage s = storage();
-		if (s == null) throw new GdxRuntimeException("localStorage unavailable, cannot write " + path);
+		if (!SpdStore.anyAvailable()) throw new GdxRuntimeException("no storage backend available, cannot write " + path);
 		if (append) {
-			String existing = s.getItem(KEY_PREFIX + path);
+			String existing = SpdStore.getItem(KEY_PREFIX + path);
 			content = (existing == null ? "" : existing) + content;
 		}
-		s.setItem(KEY_PREFIX + path, content);
-		s.setItem(MTIME_PREFIX + path, String.valueOf(System.currentTimeMillis()));
+		SpdStore.setItem(KEY_PREFIX + path, content);
+		SpdStore.setItem(MTIME_PREFIX + path, String.valueOf(System.currentTimeMillis()));
 	}
 
 	/* reading */
 
 	public InputStream read () {
-		Storage s = storage();
-		String content = s == null ? null : s.getItem(KEY_PREFIX + path);
+		String content = SpdStore.getItem(KEY_PREFIX + path);
 		if (content == null) throw new GdxRuntimeException(path + " does not exist");
 		return new ByteArrayInputStream(getUtf8Bytes(content));
 	}
@@ -316,8 +293,7 @@ public class LocalStorageFileHandle extends FileHandle {
 	}
 
 	public String readString () {
-		Storage s = storage();
-		String content = s == null ? null : s.getItem(KEY_PREFIX + path);
+		String content = SpdStore.getItem(KEY_PREFIX + path);
 		if (content == null) throw new GdxRuntimeException(path + " does not exist");
 		return content;
 	}
