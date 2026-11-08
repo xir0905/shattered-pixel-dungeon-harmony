@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "6248fc79-3f4a-4281-a6cd-fd758f30a939",
+    "createdAt": "2026-11-08T16:36:30.000Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/back_gesture_d2_before.jpeg",
+      "sha256": "d6c108928030b5ecaefa8aa886a0b4b925120727f1dd4019a531f513f2aca3d9"
+    },
+    "requirements": {
+      "text": "这是 HarmonyOS 手机截图。请判断当前显示的是：(a) 桌面/启动器（有壁纸和 app 图标）；(b) 最近任务界面；(c) Shattered Pixel Dungeon 游戏画面（像素地牢+状态条）；(d) 其他（描述内容）。",
+      "sha256": "233436c219572f4eb937158b9d347065dd841f0f7bf653837022678ee1cad18b"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏主画面（像素地牢场景）",
+        "visual_evidence": "中央显示像素风格地牢地图，包含角色、砖墙、木桶、绿色植被和楼梯，符合 Shattered Pixel Dungeon 游戏视觉特征。",
+        "component_candidates": [
+          {
+            "name": "Canvas",
+            "confidence": 0.9,
+            "reason": "用于绘制像素级游戏场景和动态元素，适合此类 2D 网格游戏。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "角色状态栏（左上角）",
+        "visual_evidence": "左上角显示角色头像、生命值 20/20、等级 1 和资源 0/10。",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.8,
+            "reason": "用于水平排列头像、血条和数值标签。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色头像。"
+          },
+          {
+            "name": "Progress",
+            "confidence": 0.8,
+            "reason": "用于显示红色生命值进度条。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "游戏提示文本（底部）",
+        "visual_evidence": "底部显示黄色文字“你回到了地牢的第1层。”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示游戏内提示信息，支持自定义颜色和字体。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部操作栏",
+        "visual_evidence": "底部包含多个图标按钮：时钟、放大镜、物品格、弓箭、背包等。",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.85,
+            "reason": "用于水平排列多个操作按钮。"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.8,
+            "reason": "每个图标按钮可封装为 Button 组件，支持点击交互。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示按钮图标。"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "右上角功能按钮",
+        "visual_evidence": "右上角显示两个红色背景图标按钮，疑似菜单和设置。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.8,
+            "reason": "用于触发菜单或设置功能。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示按钮图标。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [
+      "界面整体为像素风格游戏，符合 Shattered Pixel Dungeon 特征。",
+      "UI 布局包含顶部状态、中部游戏区、底部操作栏，结构清晰。"
+    ],
+    "uncertainties": []
+  }
+}

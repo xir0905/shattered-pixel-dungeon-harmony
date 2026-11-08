@@ -33,9 +33,9 @@
 
 ## D. 平台集成 / 功能补全（P2）
 
-- [ ] **HarmonyOS 生命周期对接**：EntryAbility onShow/onHide → 游戏暂停/音频静音；onDestroy → 存档 flush。验证后台切换回来游戏状态无损。
-- [ ] **返回手势处理**：HarmonyOS 侧滑返回当前行为？应映射为"游戏内返回"（关窗口/开暂停菜单）而非直接退出或误触。
-- [ ] **音频解锁**：CDP 日志见 `NotAllowedError: play() failed because the user didn't interact`（autoplay 限制）。libgdx 有首触解锁机制，需真机验证首次触摸后音效/音乐正常。
+- [x] **HarmonyOS 生命周期对接**（D-1/D-1b）：EntryAbility onShow/onHide → HtmlLauncher LifecycleListener（`Music.INSTANCE.pause()/resume()`，后台音频冻结已验证）；EOS 音乐死亡已修复——上游 gdx-backend-gwt 1.14.0 `ended` 回调注册为裸方法引用致 `OnCompletionListener` 永不触发（`playTracks` 换轨链 EOS 即死），补丁闭包绑定 + `__spdLoop` 防御守卫，真机验证换轨/冻结/恢复/跨 EOS 全链（`spec/audio-loop-arkweb.md`）。
+- [x] **返回手势处理**（D-2）：侧滑/返回键 → `Index.ets onBackPress`（gameReady 才拦截）→ runJavaScript 派发 Escape(27) keydown+keyup 到 document → SPDAction.BACK（游戏内 WndGame 菜单，桌面语义）；TitleScene → `HtmlLauncher.exit()` → `[SPD] exit-requested` console 信号 → onConsole → `terminateSelf`（真机验证进程退出）。
+- [x] **音频解锁**（D-3）：首触预 play 探测 NotAllowedError + `userActivation=true`，进游戏音效/音乐正常（真机验证）。
 - [ ] **横屏/折叠屏适配**：`GwtApplicationConfiguration(true)` 已 resizable，验证旋转、分屏、折叠展开时画面正确重排（含 zoom 公式在超宽屏的表现）。
 - [ ] **震动反馈**：SPD 有振动接口（Android 实现），可通过 ArkTS 注入 JS bridge（`@ohos.vibrator`）补上。
 - [ ] **多指/手势冲突**：系统手势区与游戏边缘点击的冲突检查（探索迷雾点击边缘格）。

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "74267724-9aaa-4790-8c53-79a8d1b9a67d",
+    "createdAt": "2026-11-08T16:39:48.297Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/esc_menu_test2.jpeg",
+      "sha256": "33571b9ed8e3d46b26e9368b17e552ea515effcad759f098d74b1f93ba18ad4b"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 游戏截图。关键判断：画面中是否出现了居中/中上方的半透明游戏菜单窗口（WndGame，通常含竖排按钮：开始新游戏/排行榜/挑战/设置/关于 等文字或图标，深色背景窗口带边框）？还是仍是纯游戏场景无弹窗？请具体描述看到的窗口内容和按钮文字。",
+      "sha256": "ca22e88e328b1a2262f23de658afa3b091440ed28b358a53f2ac015cbe8045b1"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏内弹窗菜单",
+        "visual_evidence": "画面中下方出现一个带灰色边框的半透明红色背景弹窗，内含两个竖排按钮，分别显示“设置”和“主菜单”文字及对应图标。",
+        "component_candidates": [
+          {
+            "name": "AlertDialog",
+            "confidence": 0.9,
+            "reason": "适用于显示模态对话框，包含标题和按钮，符合截图中弹窗样式和功能。"
+          },
+          {
+            "name": "Column",
+            "confidence": 0.8,
+            "reason": "可用于垂直排列按钮，配合容器组件构建弹窗布局。"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "用于实现“设置”和“主菜单”两个可点击按钮。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

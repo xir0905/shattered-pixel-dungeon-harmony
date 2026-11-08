@@ -22,6 +22,7 @@
 | `gwt-user/com/google/gwt/emul/java/lang/String.java` | emu `String.format` 不支持 `%n$` 位置参数（全语言属性文件 8699 处、zh 339 处在用）→ 重写 `formatImpl`，拆出 `convert()`/`formatDecimal()`：支持显式索引、隐式续接、`%f` 精度（`%.0f`/`%.2f`/默认 6 位）、新增 x/X/o/b 转换、未知转换原样输出不消费参数 | `spec/text-format-bug.md` |
 | `gdx-backend-gwt/.../gwt/GwtGL20.java` | 门 bug：4 个 `copy()` prod 分支把 NIO `remaining()` 当 `subarray` 结束下标 → 改为 `subarray(buffer.position(), buffer.limit())`（与 dev 分支及 Java NIO GL 语义一致）。产物级安全网：`tools/patch-gwt-gl.js` | `spec/door-bug-rootcause.md` |
 | `gdx-backend-gwt/.../gwt/GwtGraphics.java` | `getDensity()` override：`usePhysicalPixels` 时返回 `devicePixelRatio`（配合 `HtmlLauncher` 的 `GwtApplicationConfiguration(true)` 消除糊字） | `spec/rendering-sharpness.md` |
+| `gdx-backend-gwt/.../gwt/webaudio/WebAudioAPIMusic.java` | 上游 bug（所有浏览器）：JSNI 把 `ended` 回调注册为裸方法引用（`self.@...::ended()` 编译为原型方法值），浏览器以 `this`=DOM 元素调用 → `onCompletionListener` 永远读不到 → noosa `playTracks` 换轨链（trackLooper）在第一轨 EOS 即断死。补丁改为闭包绑定调用；另保留防御性 `__spdLoop` 标志 + `ended` 守卫（单轨循环路径 `Music.play(track, true)` 若遇 ArkWeb 非 seekable OGG 丢 `loop` 属性时显式重启），`stop()` 对不可 seek 流容错 | `spec/audio-loop-arkweb.md`（D-1b） |
 
 ## GWT 兼容层其余覆盖（随覆盖层引入，升级时同样要 diff 重放）
 

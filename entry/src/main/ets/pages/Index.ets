@@ -14,6 +14,7 @@
  */
 
 import { webview } from '@kit.ArkWeb';
+import { common } from '@kit.AbilityKit';
 
 const BASE_URL: string = 'http://spd.local/';
 
@@ -76,6 +77,30 @@ struct Index {
     setTimeout(() => {
       this.gameReady = true;
     }, 20000);
+  }
+
+  // HarmonyOS back gesture -> in-game BACK action, matching SPD on other
+  // platforms. SPD binds Escape (keyCode 27) to GameAction.BACK
+  // (SPDAction.java defaultBindings); DefaultGwtInput listens for keydown/
+  // keyup on document. GameScene cancels the current action or opens the
+  // game menu, open windows close, and scenes without their own override
+  // call Game.instance.finish() -> GwtApplication.exit(), which HtmlLauncher
+  // turns into the "[SPD] exit-requested" console message handled in onConsole.
+  onBackPress(): boolean {
+    if (!this.gameReady) {
+      return false;
+    }
+    try {
+      this.controller.runJavaScript(
+        "document.dispatchEvent(new KeyboardEvent('keydown'," +
+        "{key:'Escape',code:'Escape',keyCode:27,which:27,bubbles:true,cancelable:true}));" +
+        "document.dispatchEvent(new KeyboardEvent('keyup'," +
+        "{key:'Escape',code:'Escape',keyCode:27,which:27,bubbles:true,cancelable:true}));"
+      );
+    } catch (e) {
+      console.error(`[SPD] back->Escape injection failed: ${e}`);
+    }
+    return true;
   }
 
   private notFound(): WebResourceResponse {
@@ -151,6 +176,15 @@ struct Index {
             const msg: string = event.message.getMessage();
             if (msg.indexOf('[SPD] game-ready') !== -1) {
               this.gameReady = true;
+            }
+            if (msg.indexOf('[SPD] exit-requested') !== -1) {
+              // The game asked to quit (Scene.onBackPressed with no override,
+              // e.g. back on the title screen). Finish the ability.
+              try {
+                (getContext(this) as common.UIAbilityContext).terminateSelf();
+              } catch (e) {
+                console.error(`[SPD] terminateSelf failed: ${e}`);
+              }
             }
             console.info(`[SPD][js] ${event.message.getMessageLevel()}: ${msg}`);
           }

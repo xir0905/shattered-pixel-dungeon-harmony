@@ -42,6 +42,27 @@ public class HtmlLauncher extends GwtApplication {
 		//on the web, save/ranking/journal files live in localStorage
 		//(see the LocalStorageFileHandle patch in the gdx GWT backend)
 		FileUtils.setDefaultFileProperties(Files.FileType.Local, "");
+		//Mirror desktop's DesktopWindowListener: when the app is backgrounded
+		//the HarmonyOS WebView suspends page media, leaving noosa Music's player
+		//element frozen (or ended). Without an explicit pause()/resume() pair
+		//music stays silent after returning to the foreground (observed: the
+		//ambience track frozen at its end position until the next track change).
+		//GwtApplication fires LifecycleListener.pause()/resume() on visibilitychange.
+		addLifecycleListener(new com.badlogic.gdx.LifecycleListener() {
+			@Override
+			public void pause() {
+				com.watabou.noosa.audio.Music.INSTANCE.pause();
+			}
+
+			@Override
+			public void resume() {
+				com.watabou.noosa.audio.Music.INSTANCE.resume();
+			}
+
+			@Override
+			public void dispose() {
+			}
+		});
 		return new ReadySignalingListener(new ShatteredPixelDungeon(new HtmlPlatformSupport()));
 	}
 
@@ -100,6 +121,25 @@ public class HtmlLauncher extends GwtApplication {
 	private static native void signalReady() /*-{
 		if ($wnd.console && $wnd.console.log) {
 			$wnd.console.log("[SPD] game-ready");
+		}
+	}-*/;
+
+	/**
+	 * GwtApplication.exit() is a no-op on the web. SPD's Scene.onBackPressed()
+	 * (triggered by Escape / the system back key) routes here through
+	 * Game.instance.finish() when a scene without its own override wants to
+	 * quit. Signal the HarmonyOS host so it can actually finish the ability;
+	 * the "[SPD] exit-requested" console message is handled in
+	 * entry/src/main/ets/pages/Index.ets (onConsole).
+	 */
+	@Override
+	public void exit() {
+		signalExit();
+	}
+
+	private static native void signalExit() /*-{
+		if ($wnd.console && $wnd.console.log) {
+			$wnd.console.log("[SPD] exit-requested");
 		}
 	}-*/;
 

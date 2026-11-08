@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "d666aa18-06fe-42c3-bcf1-830e5295d727",
+    "createdAt": "2026-11-08T16:38:04.352Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/esc_menu_test.jpeg",
+      "sha256": "86f4f611c86d8b407b9dfbb0d495d0573fd204f93e7a62a49d484fc03fd11c2e"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 游戏截图。请判断：画面中是否弹出了游戏菜单/暂停窗口（一个居中的矩形窗口，含若干按钮，如\"菜单\"、\"排行榜\"、\"设置\"、\"关于\"等文字或图标按钮）？还是画面仍是纯游戏场景（无弹窗）？描述你看到的窗口和按钮文字。",
+      "sha256": "9ed8767ae88946c8dfa732cdb016a5d0addba627b5ab81860aaeda8b74aedc04"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏主场景",
+        "visual_evidence": "像素风格地牢地图，包含角色、砖墙、木桶、绿色植物、楼梯等元素，无居中弹窗",
+        "component_candidates": [
+          {
+            "name": "Unknown",
+            "confidence": 0.9,
+            "reason": "游戏场景为自定义像素渲染，无标准 ArkUI 组件对应"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "顶部状态栏",
+        "visual_evidence": "左上角角色头像、血条（20/20）、层数（1）；右上角版本号（0.4.0.2）及两个红色图标按钮",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.7,
+            "reason": "水平排列多个状态元素，适合用 Row 布局"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "角色头像和图标按钮可用 Image 组件显示"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.7,
+            "reason": "血量、层数、版本号等文本信息可用 Text 组件"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "底部操作栏",
+        "visual_evidence": "底部横向排列多个功能按钮：时钟、放大镜、物品格、弓箭、背包等",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.8,
+            "reason": "水平排列多个按钮，适合用 Row 布局"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.7,
+            "reason": "每个图标按钮可视为 Button 组件"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "按钮内图标可用 Image 组件"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部提示文字",
+        "visual_evidence": "屏幕底部黄色文字“你回到了地牢的第1层。”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "纯文本提示，直接对应 Text 组件"
+          }
+        ]
+      }
+    ],
+    "global_observations": [
+      "画面为纯游戏场景，无居中弹窗菜单或暂停窗口",
+      "所有UI元素均位于屏幕边缘，中心区域为游戏地图"
+    ],
+    "uncertainties": [
+      "游戏内像素地图的渲染方式无法对应标准 ArkUI 组件",
+      "红色图标按钮的具体功能未知，无法确定是否为标准菜单按钮"
+    ]
+  }
+}

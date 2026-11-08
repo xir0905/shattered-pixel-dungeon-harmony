@@ -41,6 +41,10 @@ $hdc = "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
 | `spd_fps_sample.js` | rAF 帧率采样（C-4 工具）：`node spd_fps_sample.js [durationMs] [label]`，输出 avg/p50/p95/p99/max、掉帧计数、刷新率估计 + 原始 delta 数组 |
 | `spd_mem_sample.js` | JS 堆/GC 采样（C-5 工具）：`node spd_mem_sample.js [durationSec] [intervalMs] [label] [--gc]`，`Runtime.getHeapUsage` 周期采样 + 可选强制 GC 测活集（判泄漏权威指标） |
 | `spd_save_probe.js` | localStorage 存档快照（C-6 工具）：`node spd_save_probe.js [label]`，枚举 `gdxfile:*/gdxmtime:*`（路径/长度/djb2 hash/mtime），前后快照 diff 证明 saveAll 落盘与杀进程存活 |
+| `spd_audio_hook.js` | HTMLMediaElement.prototype.play 钩子（D 组工具）：记录每次 play() 到 `window.__spdPlayLog`、保留 `window.__spdLastMedia` 供探查。**须在进游戏前装**（晚装抓不到 detached Audio 元素引用）；重复运行会装重复 spy 并清空日志 |
+| `spd_audio_probe.js` | 配合 audio hook 的媒体状态探针（`__spdLastMedia` 的 paused/ended/loop/t/dur 等） |
+| `spd_console_watch.js` | console 消息监听（抓 `[SPD]` 信号：game-ready / exit-requested 等） |
+| `spd_key_inject.js` | 向 document 注入 keydown/keyup（Escape 返回手势 D-2 验证；事件派发目标必须是监听注册目标 document） |
 | `check_marker.js` / `fmt_live_test.js` | 页面内存活标记 / 页面内实测 emu String.format |
 
 ### B. CDP 调试（ws URL 作为命令行参数传入）
