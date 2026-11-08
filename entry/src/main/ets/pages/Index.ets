@@ -404,10 +404,12 @@ struct Index {
             .fontColor('#8c8c8c')
             .fontSize(16)
             .margin({ top: 28 })
+            .width('100%')
             .textAlign(TextAlign.Center)
-          Text('原项目版权所有 Evan Debenham。')
+          Text('原项目版权所有 Evan Debenham')
             .fontColor('#8c8c8c')
             .fontSize(16)
+            .width('100%')
             .textAlign(TextAlign.Center)
         }
         .width('100%')
