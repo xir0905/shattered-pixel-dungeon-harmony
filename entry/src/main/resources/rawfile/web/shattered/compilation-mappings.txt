@@ -1,7 +1,3 @@
 F58B4CCE275C14A77CB0B9F2BE7871CF.cache.js
-user.agent safari
-
-F92C0F1AE56846B87EB739F8CBE88981.cache.js
-user.agent gecko1_8
 
 Devmode:devmode.js

@@ -11,6 +11,14 @@
 
 	<entry-point class="com.shatteredpixel.shatteredpixeldungeon.html.HtmlLauncher"/>
 
+	<!-- HarmonyOS ArkWeb is a Chromium engine: it always resolves to the
+	     WebKit/Blink (safari) branch of GWT's user.agent deferred binding.
+	     Pinning the property collapses the compile from 2 permutations
+	     (safari + gecko1_8, ~4.7MB each) to 1, halving rawfile size,
+	     install package and first-parse time. If this build is ever also
+	     shipped to Firefox-family browsers, remove this. -->
+	<set-property name="user.agent" value="safari"/>
+
 	<set-configuration-property name="gdx.assetpath" value="../core/src/main/assets"/>
 	<!-- Trailing slash matters: the preloader bundle generator concatenates "assets/" onto this value.
 	     Pointing it at the same dir as -war keeps the whole deployable site in build/dist. -->

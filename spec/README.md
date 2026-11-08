@@ -10,7 +10,7 @@
 SPD Java 源码 (game/shattered-pixel-dungeon-master)
         │  gradlew :html:gwtCompile  (GWT 2.11.0, ~3min)
         ▼
-JavaScript 产物 (html/build/dist/shattered/, 2 个 permutation 各 ~4.9MB)
+JavaScript 产物 (html/build/dist/shattered/, 1 个 permutation ~4.7MB；ArkWeb 是 Chromium，user.agent 已收敛为 safari 分支)
         │  node tools/sync-gwt.js    (镜像同步 + GL 补丁安全网)
         ▼
 HAP rawfile (entry/src/main/resources/rawfile/web/shattered/)
@@ -123,7 +123,8 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 | SPD 版本 | v4.0.2（主线源码） |
 | GWT / libgdx | 2.11.0 / 1.14.0 |
 | HAP | `com.example.shatteredpixeldungeon`，API 26，debug 签名 |
-| permutation | 2 个（safari + gecko 分支），各 ~4.9MB |
+| permutation | 1 个（safari；2026-11-08 C-1 收敛，原 2 个各 4.67MB），4.67MB |
+| rawfile / HAP 体积 | rawfile web 42.59MB（assets 37.84 + JS 4.76）；HAP debug 42.88MB |
 | 真机 | HUAWEI ALN-AL00，HarmonyOS 7.0，dpr 3.25 |
 | 视口 | 388×800 CSS px / 1261×2600 backing / zoom 9 |
 | 属性文件位置参数 | 全语言 8699 处（zh 339 处，`%n$` 语法；207 个 properties 文件） |

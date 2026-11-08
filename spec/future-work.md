@@ -23,7 +23,7 @@
 
 ## C. 性能优化（P1-P2）
 
-- [ ] **产物体积减半**：GWT 编译产出 2 个 permutation（~4.9MB each）。HarmonyOS ArkWeb 是 Chromium 内核，只需一个 user.agent → 在 .gwt.xml 设 `<set-property name="user.agent" value="safari"/>`（Blink 归 safari 分支）→ 产物从 2 份减为 1 份，rawfile 体积、安装包、首次解析时间全部减半。
+- [x] **产物体积减半**（2026-11-08 完成，C-1）：`GdxDefinition.gwt.xml` 加 `<set-property name="user.agent" value="safari"/>`——HarmonyOS ArkWeb 是 Chromium，恒命中 WebKit/Blink（safari）分支，gecko 分支是死重。permutation 2→1：rawfile `web/shattered` 14.10→4.76MB（-9.34MB，其中 gecko 产物为调试时代旧构建 9.34MB），rawfile 总量 51.93→42.59MB（-18%），HAP debug ~44.5→42.88MB。safari 哈希 `F58B4CCE…` 与收敛前一致 → ArkWeb 加载字节零变化，运行时行为不变（真机标题画面验证：`spec/assets/device/hap_screen_c1_single_perm.jpeg`）。
 - [ ] **首屏加载体验**：冷启动需解析 ~4.9MB JS（WebView 白屏数秒）。加原生加载页（ArkTS 侧 loading overlay，WebView onPageEnd 后隐藏）或 GWT splash 进度。
 - [ ] **启动耗时测量**：aa start → 标题画面可交互的时间基线（当前体感 5-8s），优化前后对比。
 - [ ] **帧率 profiling**：CDP `Performance.enable`/tracing 测 GameScene 帧时间；确认 60fps 达标；关注高刷设备（120Hz rAF 下 SPD 为 delta-time 逻辑，应无加速问题，需实测）。

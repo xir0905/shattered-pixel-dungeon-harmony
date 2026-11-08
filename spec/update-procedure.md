@@ -99,18 +99,22 @@ git push
 
 ## 3. 内置更新检查/新闻的处理（B4 记录）
 
-**移植版天然禁用，无需处理**：GWT 构建从未给 `Updates.service` / `News.service` 赋值
+**移植版天然禁用联网更新，无需处理**：GWT 构建从未给 `Updates.service` / `News.service` 赋值
 （全仓库 grep 无赋值点），`supportsUpdates()`/`supportsNews()` 恒为 false：
 - `Updates.checkForUpdate()` 在 `!supportsUpdatePrompts()` 时直接 return（Updates.java L49）；
-- `News.checkForArticles()` 同理（News.java L49）；
-- 设置界面入口由 `WndSettings.java` L806 的 `supportsUpdates()` 守卫隐藏。
-因此 SPD 官网更新提示、NewsScene 对移植版无影响。将来若要做鸿蒙应用内更新，
-在 `HtmlLauncher` 注入 JS bridge（ArkTS 侧检查应用市场版本）即可，不动共享源码。
+- `News.checkForNews()` 同理（News.java L49）——**永不发起网络请求**；
+- 设置界面的"检查更新"入口由 `WndSettings.java` L806 的 `supportsUpdates()` 守卫隐藏；
+- **注意**：标题菜单的"游戏新闻"按钮（TitleScene `btnNews`）是**无条件显示**的，
+  点击进入 NewsScene 会看到本地化空态提示（"新闻已禁用"/"无网络"等，NewsScene L192-219），
+  里面的"启用新闻"按钮即使点了也不会联网（`checkForNews` 直接 return）——优雅降级，无需处理。
+
+真机截屏佐证：`spec/assets/device/hap_screen_c1_single_perm.jpeg`（标题菜单可见"游戏新闻"按钮）。
+将来若要做鸿蒙应用内更新，在 `HtmlLauncher` 注入 JS bridge（ArkTS 侧检查应用市场版本）即可，不动共享源码。
 
 ## 4. 已知陷阱备忘
 
 - **行号映射脆弱**：Step 2 的 transform 是"行号 + 必须匹配"双重校验，上游任何重构都会触发 fail-fast——这是设计（宁可构建失败不可静默错改），照报错逐个更新映射即可。
-- **permutation 哈希每次必变**：`tools/sync-gwt.js` 自动清 rawfile 陈旧文件；确认 rawfile 变更全部 `git add`（历史哈希可溯源部署版本）。
+- **permutation 哈希只在内容变化时变**：GWT 编译是确定性的（user.agent 已收敛为单 permutation）——源码没变重编译哈希不变（如 safari 分支稳定为 `F58B4CCE…`），变哈希=内容真的变了。`tools/sync-gwt.js` 自动清 rawfile 陈旧文件；确认 rawfile 变更全部 `git add`（历史哈希可溯源部署版本）。
 - **`serve_dist.js` / `spd_*.{png,json}` / `*.log`**（game 根）是移植期调试残留，替换上游源码时别把它们当上游文件纠结。
 - **app 进程会被系统回收**：装机后验证时 pid 变化需重建 fport + real_ws.txt（见 `tools/devtools/README.md`）。
 - **GWT 编译日志**很大，用文件重定向看（`build-all.ps1` 已自动写入 `%TEMP%\deveco\build-all-gwt.log`）。

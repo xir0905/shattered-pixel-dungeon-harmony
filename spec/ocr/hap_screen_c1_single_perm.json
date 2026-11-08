@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "a3363fae-84e8-4ebb-b4a7-60120708acfe",
+    "createdAt": "2026-11-08T14:52:51.445Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/hap_screen_c1_single_perm.jpeg",
+      "sha256": "53a9df8d5954f37563c6573926ab6b3b6851dc0b44c04f8c5f7c153f5353cb8f"
+    },
+    "requirements": {
+      "text": "这是 HarmonyOS 真机上 SPD（Shattered Pixel Dungeon）游戏的截屏验证。请判断：1) 屏幕上是否渲染出了游戏画面（而非白屏/黑屏/加载中）；2) 是否为 SPD 标题画面（通常有像素风 LOGO、菜单按钮如\"开始/继续/排行榜/设置\"等）或已进入游戏内容；3) 画面是否清晰正常（无明显渲染破损）。",
+      "sha256": "b5a51094f271699209075b7d7631729ef5d67fe720a3a89db5eb3950a10f9cf5"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏标题",
+        "visual_evidence": "屏幕顶部显示像素风格的 'SHATTERED PIXEL DUNGEON' 标题文字，两侧有绿色发光像素图标。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示标题文字，支持自定义字体和颜色以匹配像素风格。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.7,
+            "reason": "两侧的绿色发光图标可能是独立图像资源，可用 Image 组件渲染。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "主菜单按钮组",
+        "visual_evidence": "屏幕中部排列多个矩形按钮，包含文字如“进入地牢”、“支持游戏开发”、“排行榜”、“日志”、“游戏新闻”、“改动”、“设置”、“关于”，部分按钮左侧有像素图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.95,
+            "reason": "每个菜单项均为可点击按钮，适合使用 Button 组件，可内嵌 Text 和 Image。"
+          },
+          {
+            "name": "Column",
+            "confidence": 0.85,
+            "reason": "按钮垂直排列，可用 Column 布局容器组织。"
+          },
+          {
+            "name": "Row",
+            "confidence": 0.8,
+            "reason": "部分按钮成对水平排列（如“排行榜”与“日志”），可用 Row 布局。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "版本号",
+        "visual_evidence": "屏幕右下角显示文字“v4.0.2”。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态版本信息，适合用 Text 组件。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}
