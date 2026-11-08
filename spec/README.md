@@ -123,7 +123,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 
 已知限制与坑：
 - **App 进程会被系统回收**（开发期间多次观察到 pid 消失）——重启后要重新 fport + 刷新 real_ws.txt。
-- **CDP 注入输入已可用**（2026-11-08 修复；坐标说明经 D-7 沉浸式更新）：触摸必须用 **CSS 像素**（物理坐标 ÷ dpr）。**自 D-7 沉浸式全屏后无状态栏偏移**：`CSS = 物理 / 3.25`（旧稿的 `CSS_y=(物理y−122)/3.25` 已作废，仅在历史 D-6 文档中有意义）。事件对为 `Input.dispatchTouchEvent` touchStart（含 x/y/radiusX/radiusY/force）→ 延时 → touchEnd；长按需 ≥700ms。真机导航/长按已验证（D-5/D-6/D-7）。
+- **CDP 注入输入已可用**（2026-11-08 修复；坐标说明经 D-7 更新）：触摸必须用 **CSS 像素**。当前架构（D-7）：沉浸式全屏 + 顶部 avoidArea 安全区黑边（本机 36vp=117px，随机型/刘海变化），因此 `CSS_y=(物理y−顶部安全区px)/3.25`、`CSS_x=物理x/3.25`；安全区高度可用 `innerHeight` 反推（本机 CSS 388×801 / canvas 1261×2603）。事件对为 `Input.dispatchTouchEvent` touchStart（含 x/y/radiusX/radiusY/force）→ 延时 → touchEnd；长按需 ≥700ms。真机导航/长按已验证（D-5/D-6/D-7）。
 - GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，无法页面内直接调 `String.format` 验证。
 - 音频 `NotAllowedError`（autoplay 限制）为良性，首次触摸后解锁。
 
@@ -137,7 +137,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 | permutation | 1 个（safari；2026-11-08 C-1 收敛，原 2 个各 4.67MB），4.90MB（`91F1662E…`，D-1b 后） |
 | rawfile / HAP 体积 | rawfile web 42.59MB（assets 37.84 + JS 4.76）；HAP debug 42.88MB |
 | 真机 | HUAWEI ALN-AL00，HarmonyOS 7.0，dpr 3.25 |
-| 视口 | 388×837 CSS px / 1261×2720 backing / zoom 9（D-7 沉浸式后全屏；此前带状态栏 388×800 / 1261×2600） |
+| 视口 | 388×801 CSS px / 1261×2603 backing / zoom 9（D-7：沉浸式全屏 + 顶部 avoidArea 安全区 36vp≈117px 黑边；全出血时曾为 388×837 / 1261×2720，带状态栏时代 388×800 / 1261×2600） |
 | 属性文件位置参数 | 全语言 8699 处（zh 339 处，`%n$` 语法；207 个 properties 文件） |
 | GWT 编译耗时 / HAP 构建 | ~3min / ~35s |
 | 冷启动（标题可交互） | ≈3.7~4.2s（C-3 基线，`spec/startup-time.md`） |

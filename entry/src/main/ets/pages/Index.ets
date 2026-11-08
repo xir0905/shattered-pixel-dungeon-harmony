@@ -16,8 +16,16 @@
 import { webview } from '@kit.ArkWeb';
 import { common } from '@kit.AbilityKit';
 import { fileIo as fs } from '@kit.CoreFileKit';
+import { window } from '@kit.ArkUI';
+import { BusinessError } from '@kit.BasicServicesKit';
 
 const BASE_URL: string = 'http://spd.local/';
+
+// Minimum top margin (vp) above the game canvas. With the system bars hidden
+// the reported avoid area shrinks to the bare cutout height, which leaves the
+// game's own top bar hugging the bezel; ~36vp matches the typical HarmonyOS
+// status-bar band and reads as a comfortable margin on notch-free devices too.
+const MIN_TOP_INSET_VP: number = 36;
 
 function mimeOf(path: string): string {
   const dot = path.lastIndexOf('.');
@@ -201,12 +209,56 @@ struct Index {
   // from the game are synchronous bridge calls — see SpdNativeStore above.
   private spdStore: SpdNativeStore = new SpdNativeStore();
 
+  // Top safe-area inset (vp) reserved above the WebView so the game's own UI
+  // (HP bar / depth / prompt) never sits under the camera cutout, notch or
+  // status-bar region. Resolved from the system's avoid areas instead of a
+  // hardcoded height so it adapts to every device, orientation and fold state
+  // (D-7 follow-up: full-bleed immersion put the game UI under the camera).
+  @State topInsetVp: number = 0;
+  private mainWin: window.Window | null = null;
+
   aboutToAppear(): void {
     webview.WebviewController.setWebDebuggingAccess(true);
     this.spdStore.attach(getContext(this) as common.UIAbilityContext);
+    this.initSafeInsets();
     setTimeout(() => {
       this.gameReady = true;
     }, 20000);
+  }
+
+  private initSafeInsets(): void {
+    window.getLastWindow(getContext(this)).then((win: window.Window) => {
+      this.mainWin = win;
+      this.refreshInsets(win);
+      try {
+        win.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
+          this.refreshInsets(win);
+        });
+      } catch (e) {
+        console.error(`[SPD] avoidAreaChange listen failed: ${e}`);
+      }
+    }).catch((err: BusinessError) => {
+      console.error(`[SPD] getLastWindow failed: ${JSON.stringify(err)}`);
+    });
+  }
+
+  // Take the larger of the system area (status bar band) and the cutout area
+  // (camera notch/pill) so neither can overlap game content on any model.
+  private refreshInsets(win: window.Window): void {
+    try {
+      let topPx: number = 0;
+      const sys: window.AvoidArea = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_SYSTEM);
+      if (sys.topRect.height > topPx) {
+        topPx = sys.topRect.height;
+      }
+      const cutout: window.AvoidArea = win.getWindowAvoidArea(window.AvoidAreaType.TYPE_CUTOUT);
+      if (cutout.topRect.height > topPx) {
+        topPx = cutout.topRect.height;
+      }
+      this.topInsetVp = Math.max(px2vp(topPx), MIN_TOP_INSET_VP);
+    } catch (e) {
+      console.error(`[SPD] getWindowAvoidArea failed: ${e}`);
+    }
   }
 
   // HarmonyOS back gesture -> in-game BACK action, matching SPD on other
@@ -262,10 +314,18 @@ struct Index {
 
   build() {
     Stack({ alignContent: Alignment.Center }) {
-      Web({ src: BASE_URL + 'index.html', controller: this.controller })
-        .width('100%')
-        .height('100%')
-        .backgroundColor(Color.Black)
+      Column() {
+        if (this.topInsetVp > 0) {
+          // Black band under the camera/notch; the game canvas starts below it.
+          Row()
+            .width('100%')
+            .height(this.topInsetVp)
+            .backgroundColor(Color.Black)
+        }
+        Web({ src: BASE_URL + 'index.html', controller: this.controller })
+          .width('100%')
+          .layoutWeight(1)
+          .backgroundColor(Color.Black)
         .javaScriptAccess(true)
         .domStorageAccess(true)
         .javaScriptProxy({
@@ -279,7 +339,7 @@ struct Index {
         .horizontalScrollBarAccess(false)
         .verticalScrollBarAccess(false)
         .overScrollMode(OverScrollMode.NEVER)
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.TOP, SafeAreaEdge.BOTTOM])
+        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
         .onInterceptRequest((event) => {
           if (!event) {
             return this.notFound();
@@ -326,6 +386,10 @@ struct Index {
           }
           return false;
         })
+      }
+      .width('100%')
+      .height('100%')
+
       if (!this.gameReady) {
         Column({ space: 12 }) {
           LoadingProgress()
