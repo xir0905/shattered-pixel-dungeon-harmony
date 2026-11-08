@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "4ff327ea-5979-4b38-95be-6ba6df12a3c0",
+    "createdAt": "2026-11-08T16:21:06.256Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/reclaim_c6_resume.jpeg",
+      "sha256": "3f6d54515e56a1f38bbaf04dcc7f0b5921998adc3f79e8d29a55dd1e4a65cdc2"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 截图。请确认：(1) 是否为游戏内地牢场景（顶部状态条+地图+底部快捷栏）；(2) 底部是否有黄色提示文字，内容是什么（例如\"你回到了地牢的第1层\"）；(3) 描述英雄在地图上的大致位置（相对画面中央的方位）。",
+      "sha256": "db97ccde9717942b1b7e3b4be793d896dca9a077dcf5de6d930ee1c0eb16bb6e"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "顶部状态条",
+        "visual_evidence": "左上角显示角色头像、20/20血条、0/10和数字1；右上角显示版本号0.4.0.2及两个红色图标",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.9,
+            "reason": "用于水平排列状态信息和图标"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色头像和功能图标"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.8,
+            "reason": "用于显示数值如20/20、0/10、版本号"
+          },
+          {
+            "name": "Progress",
+            "confidence": 0.75,
+            "reason": "用于显示血条进度"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "地牢地图区域",
+        "visual_evidence": "中央区域显示由灰色砖块构成的房间，内有多个木桶和一个像素角色",
+        "component_candidates": [
+          {
+            "name": "Canvas",
+            "confidence": 0.9,
+            "reason": "适合绘制像素风格的动态游戏地图"
+          },
+          {
+            "name": "Grid",
+            "confidence": 0.7,
+            "reason": "若地图为固定格子布局，可使用Grid布局"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于绘制地图背景、木桶和角色精灵"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "底部黄色提示文字",
+        "visual_evidence": "屏幕底部黑色背景上显示黄色文字“你回到了地牢的第1层。”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.95,
+            "reason": "直接显示提示文本，支持颜色和字体样式"
+          },
+          {
+            "name": "Column",
+            "confidence": 0.7,
+            "reason": "若提示区域需垂直布局其他元素可使用"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部快捷栏",
+        "visual_evidence": "底部横向排列多个图标按钮，包括时钟、放大镜、空格、物品栏（显示0/20 3）、背包",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.9,
+            "reason": "用于水平排列快捷按钮"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "每个图标按钮可封装为Button组件"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示按钮图标"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.75,
+            "reason": "用于显示物品数量如0/20 3"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}
