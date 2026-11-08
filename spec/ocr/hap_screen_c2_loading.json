@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "2e31f399-0477-447d-9be1-ac953ce208db",
+    "createdAt": "2026-11-08T15:19:23.240Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/hap_screen_c2_loading.jpeg",
+      "sha256": "2eeb66bc35b72ada94a6605eff001f89888fdec1142cfc33e2cc576e68cdbc41"
+    },
+    "requirements": {
+      "text": "这是 SPD 鸿蒙移植版冷启动 ~2s 时的截屏。请判断：1) 屏幕上是否显示了一个加载指示（如圆形转圈动画/Loading 字样）？2) 是否可见 \"Loading\" 文字？3) 除加载指示外是否还有其他内容（如状态栏以外的游戏画面）？",
+      "sha256": "8ab897f77457868cc13a5f44b037feb9a862ca14bca53b023e96dec45c874352"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "Loading 文字",
+        "visual_evidence": "屏幕中央下方显示灰色 'Loading' 文字",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.95,
+            "reason": "用于显示静态文本内容，符合 'Loading' 文字的呈现"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "圆形加载指示器",
+        "visual_evidence": "屏幕中央上方有一个白色圆形旋转动画图标",
+        "component_candidates": [
+          {
+            "name": "LoadingProgress",
+            "confidence": 0.85,
+            "reason": "专用于显示加载状态的进度指示器，支持圆形动画"
+          },
+          {
+            "name": "Progress",
+            "confidence": 0.75,
+            "reason": "可配置为圆形加载动画，适用于通用进度展示"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

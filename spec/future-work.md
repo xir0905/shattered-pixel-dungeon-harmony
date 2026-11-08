@@ -24,7 +24,7 @@
 ## C. 性能优化（P1-P2）
 
 - [x] **产物体积减半**（2026-11-08 完成，C-1）：`GdxDefinition.gwt.xml` 加 `<set-property name="user.agent" value="safari"/>`——HarmonyOS ArkWeb 是 Chromium，恒命中 WebKit/Blink（safari）分支，gecko 分支是死重。permutation 2→1：rawfile `web/shattered` 14.10→4.76MB（-9.34MB，其中 gecko 产物为调试时代旧构建 9.34MB），rawfile 总量 51.93→42.59MB（-18%），HAP debug ~44.5→42.88MB。safari 哈希 `F58B4CCE…` 与收敛前一致 → ArkWeb 加载字节零变化，运行时行为不变（真机标题画面验证：`spec/assets/device/hap_screen_c1_single_perm.jpeg`）。
-- [ ] **首屏加载体验**：冷启动需解析 ~4.9MB JS（WebView 白屏数秒）。加原生加载页（ArkTS 侧 loading overlay，WebView onPageEnd 后隐藏）或 GWT splash 进度。
+- [x] **首屏加载体验**（2026-11-08 完成，C-2）：冷启动黑屏期（0.5-3.7s）替换为原生 loading overlay。实现：`HtmlLauncher.ReadySignalingListener` 在 render #3（标题已呈现）发 `console.log("[SPD] game-ready")` → 宿主 `onConsole` 捕获隐藏 overlay（`Index.ets`，20s 兜底）。hilog 精确锚点：overlay 于 **+3.20s** 隐藏；A/B 启动耗时无回归（~4.1s 持平）。验证与数据见 `spec/startup-time.md`。GWT splash 方案未采用（原生 overlay 更早可用）。
 - [x] **启动耗时测量**（2026-11-08 完成，C-3）：`aa start` → 标题可交互 ≈ **3.7~4.2s**（体感 5-8s 偏悲观）。工具 `tools/measure-startup.ps1`（截图轮询+像素分类+hilog 相位锚点），基线与相位分解见 `spec/startup-time.md`：系统启动 ~0.5s / ArkWeb+HTML ~0.7s / 4.67MB JS 解析 ~1.1s / 资产+初始化 ~1.5-2s。优化前后对比复跑同一脚本即可。
 - [ ] **帧率 profiling**：CDP `Performance.enable`/tracing 测 GameScene 帧时间；确认 60fps 达标；关注高刷设备（120Hz rAF 下 SPD 为 delta-time 逻辑，应无加速问题，需实测）。
 - [ ] **内存与 GC**：GWT long 模拟（双 Number）带来的 GC 压力；关注长时间游玩的内存曲线。

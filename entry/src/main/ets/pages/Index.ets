@@ -66,9 +66,16 @@ function mimeOf(path: string): string {
 @Component
 struct Index {
   controller: webview.WebviewController = new webview.WebviewController();
+  // Hidden by the "[SPD] game-ready" console message from the game (see
+  // HtmlLauncher.ReadySignalingListener); 20s timeout is a defensive fallback
+  // in case console forwarding ever breaks, so the overlay can never stick.
+  @State gameReady: boolean = false;
 
   aboutToAppear(): void {
     webview.WebviewController.setWebDebuggingAccess(true);
+    setTimeout(() => {
+      this.gameReady = true;
+    }, 20000);
   }
 
   private notFound(): WebResourceResponse {
@@ -99,7 +106,7 @@ struct Index {
   }
 
   build() {
-    Column() {
+    Stack({ alignContent: Alignment.Center }) {
       Web({ src: BASE_URL + 'index.html', controller: this.controller })
         .width('100%')
         .height('100%')
@@ -141,10 +148,29 @@ struct Index {
         })
         .onConsole((event: OnConsoleEvent): boolean => {
           if (event) {
-            console.info(`[SPD][js] ${event.message.getMessageLevel()}: ${event.message.getMessage()}`);
+            const msg: string = event.message.getMessage();
+            if (msg.indexOf('[SPD] game-ready') !== -1) {
+              this.gameReady = true;
+            }
+            console.info(`[SPD][js] ${event.message.getMessageLevel()}: ${msg}`);
           }
           return false;
         })
+      if (!this.gameReady) {
+        Column({ space: 12 }) {
+          LoadingProgress()
+            .width(48)
+            .height(48)
+            .color('#e8e8e8')
+          Text('Loading')
+            .fontColor('#9a9a9a')
+            .fontSize(16)
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor(Color.Black)
+        .justifyContent(FlexAlign.Center)
+      }
     }
     .width('100%')
     .height('100%')

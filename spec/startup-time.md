@@ -51,6 +51,28 @@
 - 实际耗时优化空间：JS 解析 ~1.1s 与资产加载 ~1.5-2s 是大头；C-1 已把 JS 减半
   （9.34→4.67MB），进一步压缩需 GWT 代码分片（成本高，暂不建议）。
 
+## C-2 落地验证（2026-11-08，loading overlay 上线后）
+
+实现：`HtmlLauncher.ReadySignalingListener`（render #3 时 `console.log("[SPD] game-ready")`，
+noosa 首帧 render 创建 TitleScene、次帧绘制，#3 时标题已呈现）→ 宿主 `onConsole`
+捕获隐藏 overlay（`Index.ets`，20s 兜底超时防卡死）。
+
+A/B 对比（同工具同设备，TITLE 视觉检测上界，采样间隔 ~0.9s）：
+
+| | 基线（无 overlay） | C-2（有 overlay） |
+|---|---|---|
+| TITLE 可见 | 4.12 / 4.21 / 4.22s | 3.99 / 4.08 / 4.30s |
+
+- **启动耗时无回归**（中位 ~4.1s 持平，overlay 开销可忽略）。
+- **overlay 隐藏时刻（hilog 精确锚点）：+3.20s**（run3：T0 23:19:56.666 → game-ready 23:19:59.862）。
+- 验证截图：`spec/assets/device/hap_screen_c2_loading.jpeg`（+1.96s，转圈+Loading）、
+  `hap_screen_c2_title.jpeg`（+7.78s，标题，overlay 已隐藏）。
+- hilog 佐证：`[SPD][js] 2: [SPD] game-ready`（宿主 onConsole 转发）+
+  `ARKWEB-CONSOLE: [CONSOLE:7679] "[SPD] game-ready"`（ArkWeb 原生捕获）双通道可见。
+- 用户体验时间线：0-0.5s 系统启动页 → 0.5-3.2s loading overlay（设计态加载页，非无解释黑屏）
+  → 3.2s+ 标题可交互。
+- 新 permutation `B87947FD…`（ReadySignalingListener 改变内容 → 哈希变化，符合预期）。
+
 ## 测量方法与注意事项
 
 - `tools/measure-startup.ps1`：force-stop 杀进程 → 清 hilog → `aa start` 计时 →

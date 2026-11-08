@@ -42,8 +42,66 @@ public class HtmlLauncher extends GwtApplication {
 		//on the web, save/ranking/journal files live in localStorage
 		//(see the LocalStorageFileHandle patch in the gdx GWT backend)
 		FileUtils.setDefaultFileProperties(Files.FileType.Local, "");
-		return new ShatteredPixelDungeon(new HtmlPlatformSupport());
+		return new ReadySignalingListener(new ShatteredPixelDungeon(new HtmlPlatformSupport()));
 	}
+
+	/**
+	 * Delegating wrapper that tells the HarmonyOS host (via a console message)
+	 * when the game has finished rendering its first stable frames, so the
+	 * native loading overlay in entry/src/main/ets/pages/Index.ets can hide.
+	 *
+	 * noosa Game.render() creates the initial scene during the *first* call
+	 * (Game.step() instantiates TitleScene) and draws it from the second call
+	 * on, so we signal at the start of render #3: by then the title scene has
+	 * been presented at least once and the canvas is no longer black.
+	 */
+	private static final class ReadySignalingListener implements com.badlogic.gdx.ApplicationListener {
+		private final com.badlogic.gdx.ApplicationListener delegate;
+		private int renderCount = 0;
+
+		ReadySignalingListener(com.badlogic.gdx.ApplicationListener delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public void create() {
+			delegate.create();
+		}
+
+		@Override
+		public void resize(int width, int height) {
+			delegate.resize(width, height);
+		}
+
+		@Override
+		public void render() {
+			if (++renderCount == 3) {
+				signalReady();
+			}
+			delegate.render();
+		}
+
+		@Override
+		public void pause() {
+			delegate.pause();
+		}
+
+		@Override
+		public void resume() {
+			delegate.resume();
+		}
+
+		@Override
+		public void dispose() {
+			delegate.dispose();
+		}
+	}
+
+	private static native void signalReady() /*-{
+		if ($wnd.console && $wnd.console.log) {
+			$wnd.console.log("[SPD] game-ready");
+		}
+	}-*/;
 
 	@Override
 	public void onModuleLoad() {
