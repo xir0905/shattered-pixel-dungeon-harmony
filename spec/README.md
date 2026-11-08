@@ -22,7 +22,7 @@ entry-default-signed.hap → hdc install -r → ArkWeb WebView 加载运行
 - HAP bundle：`com.example.shatteredpixeldungeon`，API 26（HarmonyOS 7.0）
 - 承载方式：`entry/src/main/ets/pages/Index.ets` 的 ArkWeb WebView
 - GWT 平台缺口（emul/后端 bug）用 **`html/patches/` 覆盖机制**解决：`html/build.gradle` 用 patches 目录里的源文件覆盖 gdx / gwt-user 的 sources jar，重编译即生效
-- 存档：**localStorage**（自建 `LocalStorageFileHandle` 补丁，`gdxfile:`/`gdxmtime:` 键；后台化自动 saveAll 落盘，杀进程/覆盖安装不丢进度，见 `background-reclaim.md`）
+- 存档：**localStorage**（自建 `LocalStorageFileHandle` 补丁，`gdxfile:`/`gdxmtime:` 键；后台化自动 saveAll）。⚠️ localStorage 磁盘持久性缺陷已坐实（渲染进程惰性落盘，非正常退出丢进度，P0 修复中），见 `savegame-loss.md`
 
 ## 2. 目录结构
 
@@ -52,10 +52,12 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
     ├── rendering-sharpness.md          ← 像素字体糊字修复
     ├── startup-time.md / fps-profiling.md / memory-gc.md   ← C 组：启动/帧率/内存基线
     ├── background-reclaim.md           ← 后台回收：存档架构（localStorage）与落盘验证
+    ├── savegame-loss.md                ← P0：存档丢失事件与 localStorage 磁盘持久性分析（C-8）
     ├── appfreeze-analysis.md           ← appfreeze 归档日志分析（模拟器环境特性）
     ├── audio-loop-arkweb.md            ← D-1b：EOS 音乐死亡（上游 ended 回调未绑定）
     ├── rotation-resize.md              ← D-4：横屏/分屏 resize 链验证与 zoom 公式
     ├── vibration.md                    ← D-5：震动反馈（ArkWeb 原生 navigator.vibrate）
+    ├── gestures.md                     ← D-6：多指/手势冲突验证（无冲突；坐标映射校准）
     ├── assets/door|format|device/      ← 按主题归档的截图/日志
     └── ocr/                            ← 多模态识别结果 JSON
 ```
@@ -121,7 +123,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 
 已知限制与坑：
 - **App 进程会被系统回收**（开发期间多次观察到 pid 消失）——重启后要重新 fport + 刷新 real_ws.txt。
-- **CDP 注入的触摸/鼠标事件不驱动游戏导航**：事件确实到达页面并命中 canvas（touchstart/mouseDown 计数已验证），但游戏不响应；真实触摸正常。已列为 `future-work.md` F-2。
+- **CDP 注入输入已可用**（2026-11-08 修复）：触摸必须用 **CSS 像素**（物理坐标 ÷ dpr，注意顶部 122px 状态栏偏移：`CSS_y=(物理y−122)/3.25`），`Input.dispatchTouchEvent` touchStart（含 x/y/radiusX/radiusY/force）→ 延时 → touchEnd；长按需 ≥700ms。真机导航/长按已验证（D-5/D-6）。
 - GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，无法页面内直接调 `String.format` 验证。
 - 音频 `NotAllowedError`（autoplay 限制）为良性，首次触摸后解锁。
 

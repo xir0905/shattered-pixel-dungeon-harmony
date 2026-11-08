@@ -29,7 +29,9 @@
 - [x] **帧率 profiling**（2026-11-08 完成，C-4）：`tools/devtools/spd_fps_sample.js`（CDP rAF 帧间隔采样）。**60fps 达标、全程零掉帧**：TitleScene/GameScene 待机 60.6fps @60Hz 锁定（p99=16.6ms，零帧超 20ms）；地图拖动时 LTPO 面板自动升 120Hz，rAF 跟随 ~122fps（p50=8.3ms，连续 1125 帧零掉帧，仅 1 帧升降频过渡 24.7ms）。120Hz 无加速风险已代码级确认：noosa `Game.update()` 用真 delta-time（`getDeltaTime()`+200ms 钳制），速度与帧率无关。详见 `spec/fps-profiling.md`。
 - [x] **内存与 GC**（2026-11-08 完成，C-5）：`tools/devtools/spd_mem_sample.js`（CDP 堆采样+强制 GC 活集）。**无泄漏**：JS 活集 5min 零增长（16.1→15.9MB）；V8 容量进平台期（71MB）；PSS 全程稳定 387MB（Δ-37KB）。churn ~2.1MB/s 由 ~12s 周期 scavenge 消化，结合 C-4 零掉帧 → GC 停顿无帧率感知；GWT long 双 Number 开销含于 churn 内无异常。详见 `spec/memory-gc.md`。
 - [x] **后台回收策略**（2026-11-08 完成，C-6）：**杀后台进程不丢进度**。实测：后台化瞬间 `visibilitychange→pause→GameScene.onPause→Dungeon.saveAll` 自动落盘（localStorage mtime/hash 实测更新）；force-stop 后冷启动 16 个存档文件逐字节存活，继续游戏恢复第 1 层。架构修正：存档在 **localStorage**（自建 LocalStorageFileHandle 补丁，`gdxfile:`/`gdxmtime:` 键），非 IndexedDB。工具 `spd_save_probe.js`，详见 `spec/background-reclaim.md`。
+  - ⚠️ **2026-11-09 降级说明**：C-6 的"force-stop 存活"结论可能由**渲染进程幸存**掩盖（`:render` 进程是 nwebspawn 子进程，force-stop 只杀 app 进程）——不构成磁盘落盘证明。localStorage 磁盘持久性缺陷与存档丢失事件见 C-8 / `spec/savegame-loss.md`。
 - [x] **appfreeze 排查**（2026-11-08 完成，C-7）：两份归档日志（合计 538KB）均为**模拟器** THREAD_BLOCK_6S，主线程栈卡在 ArkWeb 引擎同步初始化（`NWebHelper::GetWebEngine` → `libarkweb_engine.so`）——**门 bug/GL 死循环嫌疑被栈证据否定**（门 bug 在 nwebspawn 渲染进程，结构上不可能阻塞应用主线程）。真机 ArkWeb 初始化仅 ~0.7s（C-3 实测），修复期至今真机大量冷启动/游玩零冻结。结论：平台/模拟器环境特性，真机不受影响，不改代码关闭。详见 `spec/appfreeze-analysis.md`。
+- [ ] **存档磁盘持久化加固**（P0，2026-11-09 立项，C-8）：**localStorage 磁盘持久性缺陷已坐实**——pid 52815 会话中存在的 2 级存档（seed RHT-RHB-RQF）在锁屏回收（渲染进程被杀）后彻底丢失；冷启动 +11s 存在 localStorage 异步加载空窗口（`checkAll()==0` 误判）。根因：localStorage 宿主在独立 `:render` 渲染进程（nwebspawn 子进程），落盘惰性，非正常死亡丢失未落盘写入。修复主方案：JS bridge（`registerJavaScriptProxy`）镜像 `gdxfile:*`/`gdxmtime:*` 到 ArkTS 原生文件（fsync 可靠层）+ 启动时 `runJavaScriptOnDocumentStart` 回灌（顺带消除空窗口）。完整分析、时间线与验证矩阵见 `spec/savegame-loss.md`。
 
 ## D. 平台集成 / 功能补全（P2）
 
@@ -38,7 +40,7 @@
 - [x] **音频解锁**（D-3）：首触预 play 探测 NotAllowedError + `userActivation=true`，进游戏音效/音乐正常（真机验证）。
 - [x] **横屏/折叠屏适配**（D-4）：CDP viewport 仿真验证 resize 链（与物理旋转同路径）——横屏 canvas 2720×1261 精确 1:1 跟随、分屏模拟与逐字节复原均通过，标题/游戏 3+ 次 resize 循环零崩溃；zoom 公式核算：竖屏 9（实测吻合）/横屏 7（高度约束）/分屏 6，双轴取 min 构造防拉伸，SPD 横屏感知设计内建；`module.json5` 不锁方向与 SPD Android 一致；物理旋转/折叠手感需手动（`spec/rotation-resize.md`）。
 - [x] **震动反馈**（2026-11-08 完成，D-5）：**零补丁完成**——ArkWeb 原生实现 `navigator.vibrate`（探测返回 true，真实震动），SPD 调用链断点仅在上游 `DefaultGwtInput.vibrate` 空实现；`HtmlPlatformSupport` 补 `vibrate()` override → JSNI `navigator.vibrate`（html 模块自有文件，无需 patches overlay）。真机 E2E 验证：CDP `Input.dispatchTouchEvent` 长按背包物品 1s → tooltip 弹出 + spy 捕获 `navigator.vibrate(50)`（`SPDSettings.vibration()` 默认开，设置开关由 `supportsVibration()` 自动使能）。详见 `spec/vibration.md`。
-- [ ] **多指/手势冲突**：系统手势区与游戏边缘点击的冲突检查（探索迷雾点击边缘格）。
+- [x] **多指/手势冲突**（2026-11-09 完成，D-6）：**无冲突，零改动**。边缘 tap 全部直达 canvas（spy `target=CANVAS`，4 边坐标精确）且游戏真实消费（hero 移动，存档 pos 1129→1056 落盘）；双指同触=2 个独立 touchstart，无崩溃无卡死；左缘横滑→系统返回手势（不进 WebView）→ onBackPress→Escape→WndGame 菜单；底部上滑→Home（不进 WebView）→后台化+saveAll。分工模型：系统留边缘**滑动**（返回/Home），游戏收边缘**点触**。坐标映射修正：WebView 顶部 122px 状态栏偏移，`CSS_y=(物理y−122)/3.25`。详见 `spec/gestures.md`。
 - [ ] **应用图标/启动页美化**：当前默认图标；设计 SPD 主题图标 + 启动闪屏，消除冷启动白屏观感。
 - [ ] **存档导出/备份**：localStorage 存档（`gdxfile:`/`gdxmtime:` 键）→ 导出到用户文件（供换机/重装恢复）；HarmonyOS 应用数据沙箱说明。
 - [ ] **深色模式**：启动页/WebView 背景色跟随系统深色。
