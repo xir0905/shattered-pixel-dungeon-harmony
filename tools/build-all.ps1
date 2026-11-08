@@ -13,6 +13,8 @@ param(
     [switch]$NoStart,
     # 侧载分发包用：release 构建（配合 build-profile.json5 的 release 签名材料）
     [switch]$Release,
+    # 出「未签名」HAP（给粉丝用自动签名工具/hokit 签名安装；自动强制不装机）
+    [switch]$Unsigned,
     [string]$Device = "FMR0223825079089",
     [string]$HdcPath = "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
 )
@@ -55,9 +57,57 @@ Invoke-Step "2/5 同步 dist → rawfile（含 GL 补丁安全网）" {
     node (Join-Path $repo "tools\sync-gwt.js")
 }
 
-Invoke-Step "3/5 构建 HAP（debug）" {
-    $buildMode = if ($Release) { "release" } else { "debug" }
-devecocli build --product default --build-mode $buildMode
+Invoke-Step "3/5 构建 HAP（$(if ($Unsigned) { 'unsigned' } elseif ($Release) { 'release' } else { 'debug' })）" {
+    $buildMode = if ($Release -or $Unsigned) { "release" } else { "debug" }
+    $profilePath = Join-Path $repo "build-profile.json5"
+    $profileBackup = $null
+    if ($Unsigned) {
+        # 临时清空 signingConfigs，产出未签名 HAP（自动签名工具要的是未签名包）
+        $profileBackup = [System.IO.File]::ReadAllText($profilePath)
+        $text = $profileBackup
+        $key = "signingConfigs:"
+        $ki = $text.IndexOf($key)
+        if ($ki -lt 0) { throw "build-profile.json5 未找到 signingConfigs" }
+        $open = $text.IndexOf('[', $ki)
+        $depth = 0
+        $close = -1
+        for ($i = $open; $i -lt $text.Length; $i++) {
+            if ($text[$i] -eq '[') { $depth++ }
+            elseif ($text[$i] -eq ']') { $depth--; if ($depth -eq 0) { $close = $i; break } }
+        }
+        if ($close -lt 0) { throw "build-profile.json5 signingConfigs 括号不匹配" }
+        $text = $text.Substring(0, $open) + "[]" + $text.Substring($close + 1)
+        $text = $text -replace "(?m)^\s*signingConfig:\s*'[^']*',\r?\n", ""
+        [System.IO.File]::WriteAllText($profilePath, $text)
+    }
+    try {
+        devecocli build --product default --build-mode $buildMode
+    } finally {
+        if ($Unsigned -and $profileBackup -ne $null) {
+            [System.IO.File]::WriteAllText($profilePath, $profileBackup)
+            Write-Host "[i] build-profile.json5 已还原（签名配置未改动）" -ForegroundColor DarkGray
+        }
+    }
+}
+
+if ($Unsigned) {
+    # 归档未签名包：带版本号便于分发
+    $appJson = Get-Content (Join-Path $repo "AppScope\app.json5") -Raw
+    $versionName = if ($appJson -match '"versionName"\s*:\s*"([^"]+)"') { $matches[1] } else { 'unknown' }
+    $unsignedHap = Join-Path (Split-Path $hap) "entry-default-unsigned.hap"
+    if (-not (Test-Path -LiteralPath $unsignedHap)) {
+        Write-Host "[FAIL] 未找到未签名产物：$unsignedHap" -ForegroundColor Red
+        exit 1
+    }
+    $dist = Join-Path $repo "dist"
+    New-Item -ItemType Directory -Path $dist -Force | Out-Null
+    $distName = "SPD-HarmonyOS-v$versionName-unsigned.hap"
+    Copy-Item $unsignedHap (Join-Path $dist $distName) -Force
+    Write-Host ""
+    Write-Host "[完成] 未签名分发包：$(Join-Path $dist $distName)" -ForegroundColor Green
+    Write-Host "       用自动签名工具（如 hokit）选择该文件 → 自动签名 → 安装（工具会把你/对方设备加入调试 Profile）"
+    Write-Host "       总耗时 $([math]::Round($totalSw.Elapsed.TotalSeconds,1))s"
+    exit 0
 }
 
 if ($NoInstall) {

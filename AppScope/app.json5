@@ -1,9 +1,9 @@
-﻿{
+{
   "app": {
     "bundleName": "com.example.shatteredpixeldungeon",
     "vendor": "example",
-    "versionCode": 1000000,
-    "versionName": "1.0.0",
+    "versionCode": 4000201,
+    "versionName": "4.0.2.1",
     "icon": "$media:layered_image",
     "label": "$string:app_name"
   }

@@ -29,15 +29,25 @@ Shattered Pixel Dungeon 以 **GNU GPLv3** 发布。本移植工程（含 ArkTS �
 
 ## 安装（重要说明）
 
-**本移植没有公开的"下载即装"安装包。** 鸿蒙的安全模型限制：AGC 发布证书签名的包只能上架应用市场分发，**无法本地安装**（`INSTALL_FAILED_APP_SOURCE_NOT_TRUSTED`）；调试签名的包只能装在调试 Profile 白名单内的设备上。
+**不能直接安装**由 AGC 发布证书签名的包（鸿蒙安全模型：`INSTALL_FAILED_APP_SOURCE_NOT_TRUSTED`）。推荐方式：
 
-可行方式：
+### 方式 A：未签名包 + 自动签名工具（推荐，人人可装）
 
-1. **自行构建**（推荐）：装 DevEco Studio → 克隆本仓库 → 打开工程 → 登录华为账号并用「自动签名」→ Run/安装到自己设备
-2. **加入调试白名单**：把你的设备 UDID 提供给作者，由作者加入调试 Profile 重新签名后安装
-3. 系统要求：HarmonyOS API 26（HarmonyOS 6.0/7.0）及以上
+1. 下载 `SPD-HarmonyOS-v<版本>-unsigned.hap`
+2. 手机开启开发者模式 + USB 调试，连接电脑
+3. 用自动签名工具（hokit 类）登录**你自己的华为账号**，选择该未签名包 → 自动签名并安装
+   - 工具会自动创建调试证书/调试 Profile（把你当前设备加入白名单）
+   - 换手机需在新手机上重跑一次；同一手机升级请用同一账号签名
 
-存档备份（安装后可用）：**三连击屏幕顶部黑边** → 导出/导入 JSON，用于换机、重装或版本迁移。
+### 方式 B：源码自编译
+
+装 DevEco Studio → 克隆本仓库 → 打开工程 → 登录华为账号并用「自动签名」→ 运行/安装到自己设备
+
+### 说明
+
+- 系统要求：HarmonyOS API 26（HarmonyOS 6.0/7.0）及以上
+- 作者出未签名包：`tools\build-all.ps1 -SkipGwt -Unsigned` → `dist/SPD-HarmonyOS-v<版本>-unsigned.hap`
+- 存档备份（安装后可用）：**三连击屏幕顶部黑边** → 导出/导入 JSON，用于换机、重装或版本迁移
 
 ## 构建（开发者）
 
