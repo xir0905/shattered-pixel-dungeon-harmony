@@ -57,7 +57,7 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
 |---|------|-----------|---------|------|
 | 1 | 门状态不更新（木纹面板不消失） | GWT 产物 `GwtGL20.glBufferSubData` 把 `remaining()` 当 `subarray` 结束下标 → 部分更新上传 0 字节 | patches `GwtGL20.java`（+ `tools/patch-gwt-gl.js` 安全网） | `door-bug-rootcause.md` |
 | 2 | 像素字体糊字 | canvas backing 按 CSS 像素建，合成器 3.25× 线性拉伸 | `HtmlLauncher` `GwtApplicationConfiguration(true)` + patches `GwtGraphics.getDensity()` | `rendering-sharpness.md` |
-| 3 | 角色窗口标题"1D级女猎手S" | GWT emu `String.format` 不支持 `%n$` 位置参数（zh 属性文件 8699 处在用） | patches `gwt-user/java/lang/String.java` 重写 `formatImpl` | `text-format-bug.md` |
+| 3 | 角色窗口标题"1D级女猎手S" | GWT emu `String.format` 不支持 `%n$` 位置参数（全语言属性文件 8699 处在用） | patches `gwt-user/java/lang/String.java` 重写 `formatImpl` | `text-format-bug.md` |
 
 ## 4. 构建流水线（完整命令链）
 
@@ -126,7 +126,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 | permutation | 2 个（safari + gecko 分支），各 ~4.9MB |
 | 真机 | HUAWEI ALN-AL00，HarmonyOS 7.0，dpr 3.25 |
 | 视口 | 388×800 CSS px / 1261×2600 backing / zoom 9 |
-| zh 属性文件位置参数 | 8699 处（`%n$` 语法） |
+| 属性文件位置参数 | 全语言 8699 处（zh 339 处，`%n$` 语法；207 个 properties 文件） |
 | GWT 编译耗时 / HAP 构建 | ~3min / ~35s |
 
 ## 7. 许可

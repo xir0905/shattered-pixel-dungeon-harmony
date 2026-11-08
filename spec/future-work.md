@@ -15,11 +15,11 @@
 
 ## B. 上游更新移植流程（P1）
 
-- [ ] **建立标准更新手册**：SPD 上游发版（4.0.3+）→ 源码替换 → **patches 冲突检查**（`html/patches/gwt-user`、`gdx-backend-gwt`、gdx 升级时 GwtGL20/GwtGraphics 覆盖需对照新版源码重做）→ `gradlew :html:gwtCompile` → `node tools/sync-gwt.js` → `devecocli build` → `hdc install -r` → 回归验证（门/格式/锐度三项）。
-- [ ] **patches 版本绑定**：在 patches 目录加 README 标注"针对 gdx 1.14.0 / GWT 2.11.0 / SPD 4.0.2"，升级时逐个核对。
-- [ ] **一键构建脚本**：`tools/build-all.sh`（或 .ps1）串联 GWT 编译→同步→HAP 构建→安装→启动，减少手工步骤出错。
-- [ ] **SPD 内置更新检查处理**：NewsScene/更新提示指向 SPD 官网，对移植版无意义；可考虑在移植层禁用或改为提示"请通过应用市场更新"。
-- [ ] **translation 更新**：上游消息文件更新后重扫格式说明符用法（本次发现位置参数 8699 处），确认 emu String.format 仍全覆盖。
+- [x] **建立标准更新手册**（2026-11-08 完成）：`spec/update-procedure.md` — 7 步标准升级流程：源码替换（保留 settings.gradle 等移植改造件）→ gdx/GWT 版本核对（版本号位置清单）→ arrayCloneLines 行号重校准（fail-fast 但新增 clone() 不检测，需主动 grep）→ `gradlew :html:gwtCompile` → `node tools/sync-gwt.js` → 翻译/格式串重扫（Step 5，基线：全语言位置参数 8699 处/zh 339 处）→ 构建回归三项（门/格式/锐度）→ 提交推送。
+- [x] **patches 版本绑定**（2026-11-08 完成）：`game/shattered-pixel-dungeon-master/html/patches/README.md` — 标注针对 gdx-backend-gwt 1.14.0 sources / gwt-user 2.11.0 / SPD 4.0.2；三大修复+兼容层覆盖清单（含各文件修复内容与文档指针）；升级重做流程。README 位于 patches 根目录，overlay 复制源是子目录，不会被带入构建。
+- [x] **一键构建脚本**（2026-11-08 完成）：`tools/build-all.ps1` — GWT 编译→dist→rawfile 同步（含 GL 补丁安全网检查）→HAP 构建→安装→启动，参数 `-SkipGwt/-NoInstall/-NoStart/-Device/-HdcPath`。冒烟测试通过（-SkipGwt -NoInstall，13.2s）。注意：ps1 含中文必须存为 UTF-8 **带 BOM**，否则 PowerShell 5.1 按 GBK 解析报错。
+- [x] **SPD 内置更新检查处理**（2026-11-08 完成，无需改代码）：GWT 构建从未赋值 `Updates.service`/`News.service`（HtmlLauncher 未接线）→ `supportsUpdates()`/`supportsNews()` 恒 false，NewsScene 更新入口/新闻提示天然禁用（证据：Updates.java L49 / News.java L49 / WndSettings.java L806 守卫）。已文档化于 `update-procedure.md` §3；将来应用内更新走 HtmlLauncher JS bridge。
+- [x] **translation 更新**（2026-11-08 完成）：升级手册 Step 5 固化重扫命令与基线数字（全语言位置参数 8699 处、zh 339 处；转换符清单启发式上界，升级前后对比可发现新增转换符用法）。
 
 ## C. 性能优化（P1-P2）
 
