@@ -11,7 +11,7 @@
   - 补写文档：`README.md`（移植总览+构建手册）、`text-format-bug.md`（格式串 bug 根因+修复）、`rendering-sharpness.md`（糊字修复）
   - 根目录调试残留清理：appfreeze*.log、hap_screen*.png、spd_real*.jpeg → `spec/assets/device/`
   - Temp\deveco 调试工具（51 个：hap_cdp_*.js、spd_cdp_*.js、像素/二进制取证、fmt_test）→ `tools/devtools/` + 用法 README
-- [ ] **git 版本控制**：整个项目目前**没有 git 仓库**！后续上游更新移植必须有 diff 基线。建议 `git init` 后提交基线（game 源码 + html/patches + tools + spec + HAP 工程），忽略 build/oh_modules/.cache。
+- [x] **git 版本控制**（2026-11-08 完成）：仓库根 = HAP 工程根；基线提交 `99b807c`（2667 文件，含 game 源码 + html/patches + tools + spec + rawfile 产物 + backup 取证）。忽略 build/oh_modules/.gradle/.hvigor/.cache/.idea/.preview；repo-local user 配置（XIR09），core.autocrlf=false 保持字节精确。git 安装于 `C:\Program Files\Git`（2.56.0，不在 PATH，须全路径调用）。
 
 ## B. 上游更新移植流程（P1）
 
