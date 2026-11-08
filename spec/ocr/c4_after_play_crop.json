@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "e66fad55-2161-4eb2-bfef-fa5f651af753",
+    "createdAt": "2026-11-08T15:43:51.379Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/c4_after_play_crop.png",
+      "sha256": "81c635a136481a4cf313c0282a681f86406981c24b1b0edba634d92629e73486"
+    },
+    "requirements": {
+      "text": "这是 SPD（Shattered Pixel Dungeon）鸿蒙移植版真机截图的下半部分裁剪（原始画面 y=700..2300）。请判断当前是哪个游戏场景/窗口（如：开始游戏 StartScene 的存档槽列表 / 英雄选择 HeroSelectScene / 支持开发者 SupporterScene / 新闻 NewsScene / 其他），列出可见的文字内容和按钮（尤其是否有「开始」「继续游戏」「新游戏」等按钮及其大致位置：上/中/下、左/中/右）。",
+      "sha256": "5d0450761999cf43b50b8954dd955d8fd0ef1e69bab62d209f6c1a0109baed71"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1261,
+      "height": 1600
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "存档槽列表项",
+        "visual_evidence": "多个横向排列的灰色矩形条目，每个包含角色头像、职业名称（如“战士”“女猎手”）、存档时间（如“存档于4小时前”）及右侧两个小图标。",
+        "component_candidates": [
+          {
+            "name": "List",
+            "confidence": 0.9,
+            "reason": "用于垂直排列多个结构相同的条目，符合截图中存档列表的布局。"
+          },
+          {
+            "name": "ListItem",
+            "confidence": 0.85,
+            "reason": "作为 List 的子项，每个条目可封装头像、文本和操作图标。"
+          },
+          {
+            "name": "Row",
+            "confidence": 0.8,
+            "reason": "每个存档条目内部为水平布局，适合用 Row 组合头像、文本和图标。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "排序按钮",
+        "visual_evidence": "位于列表底部左侧的灰色矩形按钮，文字为“排序: 按等级”。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准按钮组件，用于触发排序功能。"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.7,
+            "reason": "按钮内文字内容，可作为 Button 的子组件或 label。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "角色职业文本",
+        "visual_evidence": "每个存档条目中的大号文字，如“战士”“女猎手”。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.95,
+            "reason": "用于显示静态文本内容，字体较大，适合作为条目标题。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "存档时间文本",
+        "visual_evidence": "每个存档条目中职业名称下方的小号文字，如“存档于4小时前”。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示辅助信息，字体较小，适合作为副标题。"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "操作图标",
+        "visual_evidence": "每个存档条目右侧的两个小图标，可能代表删除或加载操作。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示静态图标，如删除或加载符号。"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.75,
+            "reason": "若图标可点击，可用 Button 包裹 Image 实现交互。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [
+      "截图显示的是游戏存档选择界面，包含多个存档条目和一个排序按钮。",
+      "界面布局为垂直列表，每个条目为水平排列，符合典型存档管理界面设计。"
+    ],
+    "uncertainties": []
+  }
+}

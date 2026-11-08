@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "bd952d6d-2436-4b01-9d88-827b891d2145",
+    "createdAt": "2026-11-08T15:44:49.408Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/c4_slot_bottom.png",
+      "sha256": "f64e9703f4a9a190abbb5e1e7f9a8b22ffec7ddd53fafcf56582d1e45ed8863d"
+    },
+    "requirements": {
+      "text": "这是 SPD 游戏某个场景底部区域裁剪（1261×700，对应完整画面 y=1900..2600）。请描述可见元素：有什么文字（按钮标签，如「开始」「继续」「返回」等）、图标、按钮？它们分别位于画面的什么位置（左侧/中央/右侧，垂直位置百分比）？",
+      "sha256": "a70bae90936691e6a971f4be94f889291371df9292bdc3b121d5c2a3d7385568"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1261,
+      "height": 700
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "顶部文字标签",
+        "visual_evidence": "截图顶部中央区域可见模糊文字，疑似「排序：按等级」",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.7,
+            "reason": "用于显示静态文本标签，符合顶部标题或筛选条件的常见布局"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": [
+      "截图严重模糊，无法确认是否存在按钮、图标或具体交互元素",
+      "无法判断文字是否为可点击控件或仅展示性文本",
+      "无法识别布局结构或组件排列方式"
+    ]
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "2b55a838-c43b-4124-bd43-b6c42d265649",
+    "createdAt": "2026-11-08T15:39:13.926Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/c4_title_buttons_crop.png",
+      "sha256": "379ab1bb16a5a0c1730c4877a3a012d8aa195cae922afff9da12c6dde159fe34"
+    },
+    "requirements": {
+      "text": "这是 SPD 标题画面下半部分裁剪（1261×1100 像素，对应完整画面的 y=1400..2500）。画面中有竖排的主菜单按钮：进入地牢（全宽）、支持游戏开发（全宽）、排行榜|日志（左右并排半宽）、游戏新闻|改动（并排）、设置|关于（并排）。请以裁剪图坐标（左上角为 0,0）精确输出每个按钮的像素级 bounding box：格式为 按钮文字: x_min, y_min, x_max, y_max。重点是「进入地牢」按钮。",
+      "sha256": "bdbed3feba86501413aef43ed6919b4b4bd3209e6224ee4ca550beff150719a8"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1261,
+      "height": 1100
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "支持游戏开发",
+        "visual_evidence": "顶部横排按钮，带云朵图标和文字“支持游戏开发”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准按钮样式，含图标与文字，适合用 Button 组件实现"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "排行榜",
+        "visual_evidence": "左侧第二行按钮，带柱状图图标和文字“排行榜”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标和文字的矩形按钮，符合 Button 组件特征"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "日志",
+        "visual_evidence": "右侧第二行按钮，带书本图标和文字“日志”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标和文字的矩形按钮，适合用 Button 组件实现"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "游戏新闻",
+        "visual_evidence": "左侧第三行按钮，带报纸图标和文字“游戏新闻”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标和文字的矩形按钮，符合 Button 组件特征"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "改动",
+        "visual_evidence": "右侧第三行按钮，带箭头图标和文字“改动”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标和文字的矩形按钮，适合用 Button 组件实现"
+          }
+        ]
+      },
+      {
+        "id": "component-6",
+        "name": "设置",
+        "visual_evidence": "左侧第四行按钮，带齿轮图标和文字“设置”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标和文字的矩形按钮，符合 Button 组件特征"
+          }
+        ]
+      },
+      {
+        "id": "component-7",
+        "name": "关于",
+        "visual_evidence": "右侧第四行按钮，带箭头图标和文字“关于”",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标和文字的矩形按钮，适合用 Button 组件实现"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

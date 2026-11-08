@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "1f8abddb-0240-454c-bf8c-f1c4bcea586d",
+    "createdAt": "2026-11-08T15:48:43.081Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/c4_state_now.png",
+      "sha256": "25e9a12b8fe01170c9719e5876b3ba320c2fc0d4184f966e0d110da03faeb2fa"
+    },
+    "requirements": {
+      "text": "这是 SPD 鸿蒙移植版真机画面顶部区域（1261×900，对应完整画面 y=0..900）。下方（y>900）全黑，最底部有游戏工具栏。请判断：这是什么界面/窗口？列出所有可见文字（标题、按钮标签、正文内容）。是否是游戏内某个窗口（如设置、英雄信息、日志、物品栏）？",
+      "sha256": "4787e9d5d43c8a7326044e5e21aa07bb242313f094e1a5945bd5e58deccc5918"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1261,
+      "height": 900
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "左上角角色头像与计数器",
+        "visual_evidence": "左上角显示像素风格角色头像，下方有'0/10'文字",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "用于显示角色头像"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示'0/10'计数文本"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "顶部状态栏",
+        "visual_evidence": "顶部中央有'21:21'时间显示，右侧有'04.0.2'版本号",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示时间与版本号"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "右上角功能按钮",
+        "visual_evidence": "右上角有两个图标按钮，分别类似'T'和'≡'符号",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "用于触发功能操作"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示按钮图标"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "左侧垂直菜单栏",
+        "visual_evidence": "左侧边缘有垂直排列的像素角色图标",
+        "component_candidates": [
+          {
+            "name": "List",
+            "confidence": 0.8,
+            "reason": "用于垂直排列多个角色项"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色图标"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "中央空白内容区",
+        "visual_evidence": "画面中央大面积空白区域",
+        "component_candidates": [
+          {
+            "name": "Column",
+            "confidence": 0.7,
+            "reason": "作为内容容器，当前无内容"
+          },
+          {
+            "name": "Stack",
+            "confidence": 0.65,
+            "reason": "可能用于叠加内容，当前为空"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

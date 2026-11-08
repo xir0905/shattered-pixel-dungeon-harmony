@@ -38,6 +38,7 @@ $hdc = "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
 | `hap_cdp_hires.js` / `hap_cdp_rowscan.js` | 高分辨率 ASCII 渲染 / 逐行读 GL 区域像素认字 |
 | `hap_cdp_scantap.js` | 扫描式点按：逐个试候选按钮位，每步截帧 |
 | `hap_cdp_state2.js` / `hap_cdp_idb.js` | localStorage/DOM/IndexedDB（GWT 存档）检查 |
+| `spd_fps_sample.js` | rAF 帧率采样（C-4 工具）：`node spd_fps_sample.js [durationMs] [label]`，输出 avg/p50/p95/p99/max、掉帧计数、刷新率估计 + 原始 delta 数组 |
 | `check_marker.js` / `fmt_live_test.js` | 页面内存活标记 / 页面内实测 emu String.format |
 
 ### B. CDP 调试（ws URL 作为命令行参数传入）
@@ -56,6 +57,7 @@ console/exception 监听、CPU profile、渲染状态、GPU 信息、音频格�
 | `png_ascii.js` | 最小 PNG 解码 + ASCII 分类渲染 |
 | `crop2png.js` | 裁剪+最近邻放大区域出 PNG：`node crop2png.js <src.png> <x> <y> <w> <h> <scale> <out.png>` |
 | `scanline.js` | 打印水平线上的 RGB 色段 |
+| `rowprofile.js` | PNG 行亮度/暗像素占比剖析：`node rowprofile.js <png> <x0> <x1> <y0> <y1> [step]`，用于定位 UI 横条（按钮 chrome） |
 | `locate.js` | 游戏帧内特征精确定位 |
 | `analyze_frame.ps1` | 帧分析流水线（PowerShell） |
 
@@ -81,6 +83,9 @@ console/exception 监听、CPU profile、渲染状态、GPU 信息、音频格�
 
 - **CDP 注入的触摸/鼠标事件不驱动游戏导航**：事件到达页面并命中 canvas
   （touchstart/mouseDown 计数已验证），游戏不响应；真实触摸正常。见 `spec/future-work.md` F-2。
+  **绕过方案**：`hdc shell uitest uiInput click <x> <y>` / `uitest uiInput swipe <x1> <y1> <x2> <y2> <ms>`
+  （系统级输入注入，游戏正常响应）；坐标为物理屏幕系（1260×2720），游戏 canvas 顶 = 屏幕 y-120。
+  场景导航坐标备忘见 `spec/fps-profiling.md` 附注。
 - GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，页面内不能直接调 `String.format`。
 - `asciiv2.js` 直接 `node asciiv2.js` 在某些目录下会报"找不到模块"——用完整路径调用。
 - PowerShell 内联 `node -e` 带引号表达式会被转义破坏——复杂求值写成 .js 文件再跑。

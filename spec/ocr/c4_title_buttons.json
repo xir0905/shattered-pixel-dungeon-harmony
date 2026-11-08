@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "7ca4394b-a77c-41fc-90c2-15620f22437b",
+    "createdAt": "2026-11-08T15:34:59.682Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/c4_title_sys.jpeg",
+      "sha256": "55a9ceb8bb1ad44547fc9c5d879a52a7ec6f0d99fce333bd90bf8beabc3237ab"
+    },
+    "requirements": {
+      "text": "这是 SPD 游戏标题画面（1260×2720 像素）。请列出每个主菜单按钮的文字内容及其精确像素级 bounding box（x_min, y_min, x_max, y_max，以图片左上角为原点），特别是「进入地牢」按钮。按钮包括：进入地牢、支持游戏开发、排行榜、日志、游戏新闻、改动、设置、关于。只输出识别到的按钮和坐标，不要猜测不存在的按钮。",
+      "sha256": "62522dc170f72b58969ca6db15874e901f2bc2ccd3ce9d80104684d26653d61c"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "进入地牢",
+        "visual_evidence": "位于主菜单顶部的按钮，文字为“进入地牢”，左侧有紫色门图标，背景为深灰色矩形。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准按钮样式，包含图标和文字，适合用 Button 组件实现。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "支持游戏开发",
+        "visual_evidence": "位于“进入地牢”下方的按钮，文字为“支持游戏开发”，左侧有金币图标，文字为黄色。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带图标的按钮，文字颜色突出，适合用 Button 组件并自定义样式。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "排行榜",
+        "visual_evidence": "左下区域按钮，文字为“排行榜”，左侧有柱状图图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "标准功能按钮，带图标，适合 Button 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "日志",
+        "visual_evidence": "与“排行榜”并排的按钮，文字为“日志”，左侧有书本图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "功能按钮，带图标，适合 Button 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "游戏新闻",
+        "visual_evidence": "第二排左侧按钮，文字为“游戏新闻”，左侧有卷轴图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带图标的菜单按钮，适合 Button 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-6",
+        "name": "改动",
+        "visual_evidence": "第二排右侧按钮，文字为“改动”，左侧有红绿箭头循环图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "功能按钮，带图标，适合 Button 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-7",
+        "name": "设置",
+        "visual_evidence": "底部左侧按钮，文字为“设置”，左侧有齿轮图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "标准设置按钮，带图标，适合 Button 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-8",
+        "name": "关于",
+        "visual_evidence": "底部右侧按钮，文字为“关于”，左侧有绿色箭头图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "功能按钮，带图标，适合 Button 组件。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}
