@@ -22,7 +22,7 @@ entry-default-signed.hap → hdc install -r → ArkWeb WebView 加载运行
 - HAP bundle：`com.example.shatteredpixeldungeon`，API 26（HarmonyOS 7.0）
 - 承载方式：`entry/src/main/ets/pages/Index.ets` 的 ArkWeb WebView
 - GWT 平台缺口（emul/后端 bug）用 **`html/patches/` 覆盖机制**解决：`html/build.gradle` 用 patches 目录里的源文件覆盖 gdx / gwt-user 的 sources jar，重编译即生效
-- 存档：IndexedDB（WebView 沙箱内，覆盖安装保留）
+- 存档：**localStorage**（自建 `LocalStorageFileHandle` 补丁，`gdxfile:`/`gdxmtime:` 键；后台化自动 saveAll 落盘，杀进程/覆盖安装不丢进度，见 `background-reclaim.md`）
 
 ## 2. 目录结构
 
@@ -45,10 +45,16 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
 │   └── devtools/                       ← CDP 调试工具（见其 README）
 └── spec/                               ← 本目录：文档 + 证据
     ├── README.md                       ← 本文
+    ├── future-work.md                  ← 后续工作清单（A-G 组，含已完成项索引）
+    ├── update-procedure.md             ← 上游版本升级 7 步手册
     ├── door-bug-rootcause.md           ← 门状态不更新 bug（已修复）
     ├── text-format-bug.md              ← "1D级女猎手S" 格式串 bug（已修复）
     ├── rendering-sharpness.md          ← 像素字体糊字修复
-    ├── future-work.md                  ← 后续工作清单（A-G 组）
+    ├── startup-time.md / fps-profiling.md / memory-gc.md   ← C 组：启动/帧率/内存基线
+    ├── background-reclaim.md           ← 后台回收：存档架构（localStorage）与落盘验证
+    ├── appfreeze-analysis.md           ← appfreeze 归档日志分析（模拟器环境特性）
+    ├── audio-loop-arkweb.md            ← D-1b：EOS 音乐死亡（上游 ended 回调未绑定）
+    ├── rotation-resize.md              ← D-4：横屏/分屏 resize 链验证与 zoom 公式
     ├── assets/door|format|device/      ← 按主题归档的截图/日志
     └── ocr/                            ← 多模态识别结果 JSON
 ```
@@ -78,7 +84,7 @@ node tools\sync-gwt.js
 # ③ 构建 HAP（~35s）
 devecocli build --product default --build-mode debug
 
-# ④ 安装（覆盖安装，IndexedDB 存档保留）
+# ④ 安装（覆盖安装，localStorage 存档保留）
 & "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe" -t FMR0223825079089 install -r entry\build\default\outputs\default\entry-default-signed.hap
 
 # ⑤ 启动
@@ -125,7 +131,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 | SPD 版本 | v4.0.2（主线源码） |
 | GWT / libgdx | 2.11.0 / 1.14.0 |
 | HAP | `com.example.shatteredpixeldungeon`，API 26，debug 签名 |
-| permutation | 1 个（safari；2026-11-08 C-1 收敛，原 2 个各 4.67MB），4.67MB |
+| permutation | 1 个（safari；2026-11-08 C-1 收敛，原 2 个各 4.67MB），4.90MB（`91F1662E…`，D-1b 后） |
 | rawfile / HAP 体积 | rawfile web 42.59MB（assets 37.84 + JS 4.76）；HAP debug 42.88MB |
 | 真机 | HUAWEI ALN-AL00，HarmonyOS 7.0，dpr 3.25 |
 | 视口 | 388×800 CSS px / 1261×2600 backing / zoom 9 |

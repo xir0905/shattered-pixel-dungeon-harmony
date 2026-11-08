@@ -36,7 +36,7 @@
 - [x] **HarmonyOS 生命周期对接**（D-1/D-1b）：EntryAbility onShow/onHide → HtmlLauncher LifecycleListener（`Music.INSTANCE.pause()/resume()`，后台音频冻结已验证）；EOS 音乐死亡已修复——上游 gdx-backend-gwt 1.14.0 `ended` 回调注册为裸方法引用致 `OnCompletionListener` 永不触发（`playTracks` 换轨链 EOS 即死），补丁闭包绑定 + `__spdLoop` 防御守卫，真机验证换轨/冻结/恢复/跨 EOS 全链（`spec/audio-loop-arkweb.md`）。
 - [x] **返回手势处理**（D-2）：侧滑/返回键 → `Index.ets onBackPress`（gameReady 才拦截）→ runJavaScript 派发 Escape(27) keydown+keyup 到 document → SPDAction.BACK（游戏内 WndGame 菜单，桌面语义）；TitleScene → `HtmlLauncher.exit()` → `[SPD] exit-requested` console 信号 → onConsole → `terminateSelf`（真机验证进程退出）。
 - [x] **音频解锁**（D-3）：首触预 play 探测 NotAllowedError + `userActivation=true`，进游戏音效/音乐正常（真机验证）。
-- [ ] **横屏/折叠屏适配**：`GwtApplicationConfiguration(true)` 已 resizable，验证旋转、分屏、折叠展开时画面正确重排（含 zoom 公式在超宽屏的表现）。
+- [x] **横屏/折叠屏适配**（D-4）：CDP viewport 仿真验证 resize 链（与物理旋转同路径）——横屏 canvas 2720×1261 精确 1:1 跟随、分屏模拟与逐字节复原均通过，标题/游戏 3+ 次 resize 循环零崩溃；zoom 公式核算：竖屏 9（实测吻合）/横屏 7（高度约束）/分屏 6，双轴取 min 构造防拉伸，SPD 横屏感知设计内建；`module.json5` 不锁方向与 SPD Android 一致；物理旋转/折叠手感需手动（`spec/rotation-resize.md`）。
 - [ ] **震动反馈**：SPD 有振动接口（Android 实现），可通过 ArkTS 注入 JS bridge（`@ohos.vibrator`）补上。
 - [ ] **多指/手势冲突**：系统手势区与游戏边缘点击的冲突检查（探索迷雾点击边缘格）。
 - [ ] **应用图标/启动页美化**：当前默认图标；设计 SPD 主题图标 + 启动闪屏，消除冷启动白屏观感。
