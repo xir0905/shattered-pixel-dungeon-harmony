@@ -59,6 +59,7 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
     ├── rotation-resize.md              ← D-4：横屏/分屏 resize 链验证与 zoom 公式
     ├── vibration.md                    ← D-5：震动反馈（ArkWeb 原生 navigator.vibrate）
     ├── gestures.md                     ← D-6：多指/手势冲突验证（无冲突；坐标映射校准）
+    ├── release-signing.md              ← E 组：侧载分发的发布签名步骤（不上架商店）
     ├── assets/door|format|device/      ← 按主题归档的截图/日志
     └── ocr/                            ← 多模态识别结果 JSON
 ```
@@ -143,6 +144,8 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 | GWT 编译耗时 / HAP 构建 | ~3min / ~35s |
 | 冷启动（标题可交互） | ≈3.7~4.2s（C-3 基线，`spec/startup-time.md`） |
 
-## 7. 许可
+## 7. 许可与分发
 
-SPD 为 **GPLv3**。移植版（含 `html/patches/` 修改与本文档）分发时必须提供对应源码。上架前的合规准备见 `future-work.md` E 组。
+SPD 为 **GPLv3**。移植版（含 `html/patches/` 修改与 ArkTS 宿主）同样以 GPLv3 授权：仓库根 `LICENSE.txt` + `README.md`（非官方声明/源码获取/侧载安装/署名）。
+
+**本版本只发侧载包，不上架应用市场**。分发 HAP 时必须同时提供对应源码（仓库转 Public 或随包附源码包）；侧载签名步骤见 `spec/release-signing.md`（debug 签名有设备白名单，不能直接发给观众）。

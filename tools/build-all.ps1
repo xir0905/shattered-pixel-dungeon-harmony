@@ -11,6 +11,8 @@ param(
     [switch]$SkipGwt,
     [switch]$NoInstall,
     [switch]$NoStart,
+    # 侧载分发包用：release 构建（配合 build-profile.json5 的 release 签名材料）
+    [switch]$Release,
     [string]$Device = "FMR0223825079089",
     [string]$HdcPath = "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
 )
@@ -54,7 +56,8 @@ Invoke-Step "2/5 同步 dist → rawfile（含 GL 补丁安全网）" {
 }
 
 Invoke-Step "3/5 构建 HAP（debug）" {
-    devecocli build --product default --build-mode debug
+    $buildMode = if ($Release) { "release" } else { "debug" }
+devecocli build --product default --build-mode $buildMode
 }
 
 if ($NoInstall) {
