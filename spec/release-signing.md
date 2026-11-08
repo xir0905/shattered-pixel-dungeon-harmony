@@ -29,6 +29,12 @@
 
 ## 3. 申请发布证书与 Profile
 
+> ⚠️ **改包名必须先有新的签名材料（实测）**：把 `app.json5` 的 `bundleName` 改成新值后直接构建会失败——
+> `hvigor ERROR: Failed :entry:default@SignHap — The bundleName in app.json5 does not match the bundleName in the generated SigningConfigs`
+> （现有调试档案绑定 `com.example.shatteredpixeldungeon`）。因此**顺序必须是**：
+> ① AGC 建好新包名的应用 → ② 申请该包名的发布证书 + 发布 Profile → ③ 改 `bundleName` → ④ 配置 signingConfigs → ⑤ 构建。
+> 若想先用调试签名在自己设备上试：需在 DevEco Studio 里登录华为账号，用 *Automatically generate signature* 为新包名重新生成调试档案。
+
 1. 本地生成密钥库（任选一种方式）：
    - DevEco Studio：`Build → Generate Key and CSR`（生成 `.p12` 密钥库 + `.csr`）；
    - 或 `keytool` 生成 keystore / CSR。
