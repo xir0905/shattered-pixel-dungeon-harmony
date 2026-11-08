@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "fa60708f-313d-4c0e-ac88-d6e57d9b9300",
+    "createdAt": "2026-11-08T08:38:06.594Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/关门状态.jpg",
+      "sha256": "eb0e0d4d532df0b9c3fe90a38315c421a80fcc7bf03d6c3290ab22755aff911a"
+    },
+    "requirements": {
+      "text": "这是Shattered Pixel Dungeon安卓版游戏截图（关门状态）。请精确描述：1) 画面中门的位置和外观（颜色、材质、门框、门板方向）；2) 门是关闭样式吗，具体特征是什么（门板填满门洞？颜色？）；3) 英雄位置；4) 门周围环境（墙、地板）；5) 屏幕上任何其他显著特征。",
+      "sha256": "9b588c3ea8ff23434c22e6baa1ea9d97cef371d69ed321f8750bff56eddff935"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 537,
+      "height": 612
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "像素风格游戏场景",
+        "visual_evidence": "截图显示一个像素风格的2D游戏画面，包含角色、门、砖墙和地板。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "用于渲染像素艺术背景和角色精灵图。"
+          },
+          {
+            "name": "Canvas",
+            "confidence": 0.7,
+            "reason": "可能用于动态绘制像素级游戏元素。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "角色精灵",
+        "visual_evidence": "画面中有一个红发、穿蓝白衣服的像素角色，位于门下方。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.95,
+            "reason": "角色为静态或动画精灵图，适合用Image组件渲染。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "木门",
+        "visual_evidence": "画面中央偏左有一个棕色木门，门板垂直，门框清晰，门处于关闭状态。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "门为静态像素图像，适合用Image组件渲染。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "砖墙背景",
+        "visual_evidence": "门周围和右侧是灰色砖墙纹理，由重复砖块图案构成。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "背景墙为重复纹理图像，可用Image组件平铺渲染。"
+          },
+          {
+            "name": "Grid",
+            "confidence": 0.6,
+            "reason": "若需动态生成砖块，可考虑Grid布局，但图像更可能为预渲染。"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "地板",
+        "visual_evidence": "角色脚下是灰色像素地板，与砖墙材质不同。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "地板为静态像素图像，适合用Image组件渲染。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

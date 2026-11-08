@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "fb05d128-6813-4d2d-bdd8-ceb467e8fffb",
+    "createdAt": "2026-11-08T11:26:30.058Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/文字显示问题.jpg",
+      "sha256": "90e2def3687d9a38d2a1d0b419f9db6eca3e7d75f5c2262f5ca6d2432b0337a4"
+    },
+    "requirements": {
+      "text": "这是一个游戏截图（Shattered Pixel Dungeon，中文界面）。请逐字读出截图中所有可见的文字内容，特别关注出现乱码或异常字符的文本行（例如可能显示为\"1D级战士S\"、\"1D级女猎手s\"之类的格式错误文本）。请说明：1) 每一行文字的确切内容（逐字转录，保留大小写和异常字符）；2) 这些文字出现在界面的什么位置（窗口标题、列表行、按钮等）；3) 窗口/界面的整体布局描述。",
+      "sha256": "655983eb02a0e0e98a451758c5ca62955ac5e83596d5a5867ada534a3b80b8c4"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "角色信息面板",
+        "visual_evidence": "中央灰色矩形框，包含角色头像、黄色标题“1D级女猎手S”、属性列表（力量、生命、经验等）及底部三个图标按钮。",
+        "component_candidates": [
+          {
+            "name": "Column",
+            "confidence": 0.9,
+            "reason": "用于垂直排列标题、属性列表和底部按钮组。"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.95,
+            "reason": "用于显示“1D级女猎手S”、“力量”、“10”等所有文本内容。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色头像和底部三个功能图标。"
+          },
+          {
+            "name": "Row",
+            "confidence": 0.8,
+            "reason": "用于水平排列底部三个图标按钮。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "状态栏",
+        "visual_evidence": "屏幕顶部显示时间“07:23”、网络速度“59 B/s”、电池图标等系统状态信息。",
+        "component_candidates": [
+          {
+            "name": "StatusBar",
+            "confidence": 0.9,
+            "reason": "标准系统状态栏，显示时间、网络、电量等信息。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "底部提示文本",
+        "visual_evidence": "屏幕底部黄色文字“你降入了地牢的第1层。”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.95,
+            "reason": "用于显示游戏内提示信息。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部工具栏",
+        "visual_evidence": "屏幕最底部一排图标按钮，包括时钟、放大镜、物品栏、弓箭、背包等。",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.85,
+            "reason": "用于水平排列多个功能按钮。"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "每个图标都是可点击的按钮，用于触发不同功能。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

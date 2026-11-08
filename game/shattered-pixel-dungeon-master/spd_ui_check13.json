@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "a2c9a8c5-ef3e-4d89-babd-f633fd8dbd39",
+    "createdAt": "2026-11-08T02:50:05.809Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_sweep.png",
+      "sha256": "4872485a06ce990e6a674ad4ffbe72c28e35bcee37e1a769e543953ac5aa62cf"
+    },
+    "requirements": {
+      "text": "这是 SPD 网页版英雄选择界面，已选中战士，然后连续点击了底部多个位置都无反应。请精确描述：1) \"开始\"按钮的确切外观（宽度、颜色、里面的文字和图标）2) 按钮周围还有什么（信息图标i、设置图标、自定义种子输入框？）3) 底部区域（y>300）从左到右依次有哪些元素及其水平像素范围 4) 画面尺寸754x487，请尽量给出各元素的像素坐标",
+      "sha256": "abcd324ea41fca5f83cc47df03ef336b2a3f8108ae622baac622db21258f5696"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "选择一位英雄",
+        "visual_evidence": "左上角黄色文字标题",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "标题文本，适合用 Text 组件显示"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "英雄头像选择网格",
+        "visual_evidence": "左侧 2x3 网格，包含 6 个像素风格头像",
+        "component_candidates": [
+          {
+            "name": "Grid",
+            "confidence": 0.85,
+            "reason": "网格布局适合用 Grid 组件实现"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "每个格子内为图像，可用 Image 组件"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "战士描述文本",
+        "visual_evidence": "左侧下方黄色文字描述，包含“战士”标题和技能说明",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "多行文本描述，适合用 Text 组件"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "信息图标 i",
+        "visual_evidence": "战士标题右侧蓝色圆形背景带白色 'i' 字符",
+        "component_candidates": [
+          {
+            "name": "Icon",
+            "confidence": 0.85,
+            "reason": "信息图标，可用 Icon 组件或 Image 组件"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "开始按钮",
+        "visual_evidence": "左下角深色矩形按钮，内含像素风格“开始”文字",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准按钮交互元素，适合用 Button 组件"
+          }
+        ]
+      },
+      {
+        "id": "component-6",
+        "name": "返回箭头",
+        "visual_evidence": "左下角“开始”按钮左侧的左向箭头",
+        "component_candidates": [
+          {
+            "name": "Icon",
+            "confidence": 0.8,
+            "reason": "导航箭头图标，可用 Icon 组件"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

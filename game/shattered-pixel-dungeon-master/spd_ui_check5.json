@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "bef1176c-0608-43b6-9902-3fea16e80cf5",
+    "createdAt": "2026-11-08T02:28:08.989Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_debug.png",
+      "sha256": "72b9c09539e30b21bf8c3240895b06f03fcd3c9c910198d2fc2ee46792c76793"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 网页版点击\"进入地牢\"类按钮之后的截图。请描述：1) 现在显示的是什么界面（主菜单/英雄选择/设置/仍是介绍窗口）2) 所有可见的文字和按钮 3) 界面是否发生了变化",
+      "sha256": "2a8272e0b5dc0075048d73af0e7e46d1540bb44e8468f95933dfa7a079e9ca89"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏标题",
+        "visual_evidence": "SHATTERED PIXEL DUNGEON",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态标题文本，字体和颜色可自定义"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "背景描述文本",
+        "visual_evidence": "在你之前，也曾经有很多来自地面的英雄向这个地牢进发...准备好了吗？",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示多行说明性文字，支持换行和段落"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "进入地牢按钮",
+        "visual_evidence": "进入地牢",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.95,
+            "reason": "标准交互按钮，包含图标和文字，用于触发进入地牢操作"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "装饰性图标",
+        "visual_evidence": "标题两侧的绿色发光符文图标",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示装饰性静态图像，增强视觉主题"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

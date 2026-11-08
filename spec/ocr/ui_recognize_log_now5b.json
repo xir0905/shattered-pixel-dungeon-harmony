@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "39859c33-e8f7-4fc8-afe5-0d37f67d56fb",
+    "createdAt": "2026-11-08T09:36:55.525Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/log_now_x5b.png",
+      "sha256": "7c45f37b94b426959bee5664726bbfb7f78a744d3e825fee54b9eb0d04660a50"
+    },
+    "requirements": {
+      "text": "这是像素地牢游戏 SPD 的游戏日志文字区域放大截图（原始屏幕区域 x=0-260, y=635-710，5倍放大，8行日志，每行8像素高）。请逐行精确读出所有日志文字（中文），从上到下保持顺序，颜色为绿色/白色/黄色像素字体。不要遗漏任何一行。",
+      "sha256": "13df5b2b5fb0f5a95ba682d8aab3dc6f71720b906264781160056b4cd544b2a4"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1300,
+      "height": 375
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏日志文本区域",
+        "visual_evidence": "黑色背景上有多行彩色像素化文字，颜色包括绿色、白色、黄色，呈现8行日志，每行约8像素高，文字内容因像素化和压缩失真无法清晰辨认。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.7,
+            "reason": "用于显示多行纯文本内容，适合日志展示，但当前像素化字体和颜色可能需自定义样式或使用Image替代。"
+          },
+          {
+            "name": "RichText",
+            "confidence": 0.6,
+            "reason": "若需支持多颜色文本，可使用RichText组合不同颜色的TextSpan，但当前像素字体效果难以精确还原。"
+          },
+          {
+            "name": "Unknown",
+            "confidence": 0.9,
+            "reason": "因图像严重失真、像素化和压缩伪影，无法确认具体文字内容或字体样式，无法匹配精确ArkUI组件。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": [
+      "图像严重失真，无法准确识别日志文字内容，无法确认是否为中文或具体语义。",
+      "像素字体颜色和布局可能为游戏自定义渲染，标准ArkUI组件难以直接还原视觉效果。"
+    ]
+  }
+}

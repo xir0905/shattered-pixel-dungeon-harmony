@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "b2405f3e-bc57-4fcd-80d6-e52313afc228",
+    "createdAt": "2026-11-08T02:25:48.364Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_cdp.png",
+      "sha256": "1373e8dc0256fdbb8911cde712735653ff31e10388e22012f60ed8fcd64c48a7"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 像素地牢游戏网页版的标题画面截图。请详细描述：1) 画面上所有可见的文字内容（标题、按钮文字、窗口文字、版本号等）2) 可见的按钮和窗口（位置+文字）3) 文字渲染是否清晰完整，有无乱码或缺字 4) 整体是否是一完整可交互的游戏标题画面",
+      "sha256": "e489ce765ad77a10c6eafe3c3cf05ff8a82443f4162d88d89efc2738424472da"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏标题",
+        "visual_evidence": "SHATTERED PIXEL DUNGEON",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态标题文字，字体风格符合像素游戏特征"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "游戏介绍文本段落",
+        "visual_evidence": "在你之前，也曾经有很多来自地面的英雄向这个地牢进发...准备好踏入地牢，探秘护符了吗？是时候开始你自己的冒险了！",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "多行说明性文字，适合用 Text 组件展示，支持换行和段落"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "进入地牢按钮",
+        "visual_evidence": "按钮上显示文字“进入地牢”，左侧有小图标",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.95,
+            "reason": "标准交互按钮，包含文字和图标，符合 Button 组件特征"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

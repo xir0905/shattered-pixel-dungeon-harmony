@@ -1,0 +1,30 @@
+> Task :services:compileJava
+
+> Task :SPD-classes:compileJava
+注: C:\Users\XIR09\ShatteredPixelDungeon\game\shattered-pixel-dungeon-master\SPD-classes\src\main\java\com\watabou\noosa\TextInput.java使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+注: 某些输入文件使用了未经检查或不安全的操作。
+注: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+
+> Task :services:updates:githubUpdates:compileJava
+> Task :services:news:shatteredNews:compileJava
+
+> Task :core:compileJava
+注: C:\Users\XIR09\ShatteredPixelDungeon\game\shattered-pixel-dungeon-master\core\src\main\java\com\shatteredpixel\shatteredpixeldungeon\messages\Messages.java使用或覆盖了已过时的 API。
+注: 有关详细信息, 请使用 -Xlint:deprecation 重新编译。
+注: 某些输入文件使用了未经检查或不安全的操作。
+注: 有关详细信息, 请使用 -Xlint:unchecked 重新编译。
+
+> Task :desktop:compileJava
+
+[Incubating] Problems report is available at: file:///C:/Users/XIR09/ShatteredPixelDungeon/game/shattered-pixel-dungeon-master/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 10.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/9.5.0/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 1m 18s
+6 actionable tasks: 6 executed
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.5.0/userguide/configuration_cache_enabling.html

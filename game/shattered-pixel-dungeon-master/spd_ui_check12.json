@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "1d71cf55-4b62-4f1a-8889-16c88363926d",
+    "createdAt": "2026-11-08T02:44:56.891Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_crop_start.png",
+      "sha256": "dd1d29264247274466578eb9c018b5c25fa283ec4cd88e928d53fa2b4c8887a6"
+    },
+    "requirements": {
+      "text": "这是 SPD 英雄选择界面左下角区域裁剪图（原图754x487的 x:0-350,y:300-487 区域）。图中有\"开始\"按钮和返回箭头。请给出：1) \"开始\"按钮的完整边界框（相对此裁剪图的坐标 x,y）2) 返回箭头的位置 3) 按钮内文字内容",
+      "sha256": "3d278bcaf5808204bb839101aeeaf88e5f5541ad06d229dc4ce447459cd3fddd"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 350,
+      "height": 187
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "开始按钮",
+        "visual_evidence": "按钮内显示文字“开始”，左侧带有一个小图标，整体为深色背景矩形按钮",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准按钮组件，包含文字和可选图标，符合视觉表现"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "返回箭头",
+        "visual_evidence": "位于按钮左侧的左向箭头符号“<”，独立显示在黑色背景上",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.7,
+            "reason": "箭头为静态图形，可能以图片形式呈现"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.6,
+            "reason": "若为字体图标，可用 Text 组件配合字体显示"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

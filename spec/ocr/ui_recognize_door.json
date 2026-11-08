@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "0cc27377-9cb2-43c5-aa3e-88c6305369a0",
+    "createdAt": "2026-11-08T07:55:25.967Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/gldump_door.png",
+      "sha256": "6caf19d1566843afa0730e21392606f6743be536fbfd3fa6d2acf910c0b45813"
+    },
+    "requirements": {
+      "text": "这是鸿蒙手机上运行的 Shattered Pixel Dungeon（破碎的像素地牢）游戏画面（388x800）。请识别：1) 当前显示的是哪个界面（地牢游戏视图/主菜单/日志窗口/更新说明窗口/Journal等）；2) 画面中是否有门（door）地形，位置在哪里；3) 英雄角色在哪里；4) 顶部和底部 UI 区域的内容；5) 任何可见的文字内容。",
+      "sha256": "b8d8bc6f35db85b7b6ed0b6e5812defc3aa065f5f61693129d6173aea7343306"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 388,
+      "height": 800
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "顶部状态栏",
+        "visual_evidence": "左上角显示角色头像、生命值19/20、等级1；右上角显示时间0:02和两个图标按钮",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.9,
+            "reason": "用于水平排列多个状态元素"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色头像和图标"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.8,
+            "reason": "用于显示数值如19/20和0:02"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "游戏主视图",
+        "visual_evidence": "像素风格地牢地图，包含石砖墙、绿色水池、角色、门形地形",
+        "component_candidates": [
+          {
+            "name": "Canvas",
+            "confidence": 0.9,
+            "reason": "适合绘制像素级游戏地图和动态角色"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.75,
+            "reason": "用于绘制静态地形元素如墙和水池"
+          },
+          {
+            "name": "Unknown",
+            "confidence": 0.6,
+            "reason": "游戏地图可能由自定义组件或引擎渲染，非标准ArkUI组件"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "底部日志区域",
+        "visual_evidence": "绿色文字显示游戏事件：'你获得了:投石。你的指南有新的建议要告诉你!点击屏幕右上角闪烁的日志按钮进行阅读。你击败了下水道巨蛇。'",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示多行游戏日志文本"
+          },
+          {
+            "name": "Column",
+            "confidence": 0.7,
+            "reason": "可能用于垂直排列日志和下方工具栏"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部工具栏",
+        "visual_evidence": "左下角有钟表和放大镜图标，中间是物品栏格子，右下角显示0/30 2和物品图标",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.85,
+            "reason": "用于水平排列工具栏元素"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示图标如钟表、放大镜和物品"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.75,
+            "reason": "用于显示数字如0/30 2"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "5500af1c-086e-4359-8f00-879ef0957aad",
+    "createdAt": "2026-11-08T02:37:44.868Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_debug.png",
+      "sha256": "fd7def29245fe3e11ffba98ce85517ce94ee31d23eb3e71ca07f75218d98682f"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 网页版，之前显示介绍窗口（含\"进入地牢\"按钮），刚刚点击了左侧按钮(231,360)。请描述：1) 当前界面是什么（主菜单按钮区/英雄选择/仍在介绍窗口）2) 列出所有可见文字和按钮（尤其主菜单按钮：如 开始/排名/日志/设置/关于 等）3) 与介绍窗口相比的变化",
+      "sha256": "0a66ebaecf2be1f46833151793d3be32915cfb5a358e7f29d622ba134037c1cf"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "选择一位英雄",
+        "visual_evidence": "左上角黄色文字标题",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态标题文本"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "英雄选择网格",
+        "visual_evidence": "2x3 网格排列的六个角色头像按钮",
+        "component_candidates": [
+          {
+            "name": "Grid",
+            "confidence": 0.85,
+            "reason": "适合布局固定数量的可选项目"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.8,
+            "reason": "每个格子是可点击的角色选择项"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

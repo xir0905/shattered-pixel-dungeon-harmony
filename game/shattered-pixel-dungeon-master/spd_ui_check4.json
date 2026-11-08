@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "21a51080-96ea-4d43-b759-cb0fdf19f7d1",
+    "createdAt": "2026-11-08T02:26:21.351Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_cdp.png",
+      "sha256": "1373e8dc0256fdbb8911cde712735653ff31e10388e22012f60ed8fcd64c48a7"
+    },
+    "requirements": {
+      "text": "请给出图中\"进入地牢\"按钮（带图标和文字的按钮）的像素坐标边界框（左上角x,y和右下角x,y），以及介绍文字窗口的大致边界框。只需精确坐标，画布尺寸为754x487。",
+      "sha256": "106817e15c381edd08ebc8a6f0deb4411d314ee749f66f5ae735dad92ad5ad2d"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "进入地牢按钮",
+        "visual_evidence": "底部中央有一个带图标和文字“进入地牢”的按钮，背景为深灰色，文字为白色，左侧有一个小图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准按钮组件，包含图标和文字，适合用于触发动作。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "游戏标题",
+        "visual_evidence": "顶部中央显示“SHATTERED PIXEL DUNGEON”字样，两侧有绿色火焰图标。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示标题文本，可配合Image组件展示两侧图标。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示两侧的绿色火焰图标。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "介绍文字窗口",
+        "visual_evidence": "标题下方有一段三行中文介绍文字，描述游戏背景故事。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示多行说明性文本，适合展示游戏介绍。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exposes the game's own sources to GWT. Module package =
+     com.shatteredpixel.shatteredpixeldungeon, so an empty source path scans
+     every classpath entry for com/shatteredpixel/shatteredpixeldungeon/**
+     (core, html, services); the emu super-source tree is excluded. -->
+<module>
+	<source path="">
+		<exclude name="**/emu/**"/>
+	</source>
+</module>

@@ -1,0 +1,18 @@
+//core game code modules
+include ':SPD-classes'
+include ':core'
+
+//platform modules
+//include ':android'  //excluded for harmonyos port (requires Android SDK)
+//include ':ios'      //excluded for harmonyos port
+include ':desktop'
+include ':html'
+
+//service modules
+include ':services'
+    //updates
+    include ':services:updates:debugUpdates'
+    include ':services:updates:githubUpdates'
+    //news
+    include ':services:news:debugNews'
+    include ':services:news:shatteredNews'

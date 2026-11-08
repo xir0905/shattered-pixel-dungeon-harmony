@@ -1,0 +1,56 @@
+{
+  app: {
+    signingConfigs: [
+      {
+        name: 'default',
+        type: 'HarmonyOS',
+        material: {
+          certpath: 'C:\\Users\\XIR09\\.ohos\\config\\default_ShatteredPixelDungeon_QN1yhT24qula4rqQyZ1M6yyUL8GASo6NS1ZWyrbRgE=.cer',
+          keyAlias: 'debugKey',
+          keyPassword: '0000001b367f72a02624c85e6a3c748b573d82b8f07e4f0cc010248f4c3bb30916a3270a2e3be060e59764',
+          profile: 'C:\\Users\\XIR09\\.ohos\\config\\default_ShatteredPixelDungeon_QN1yhT24qula4rqQyZ1M6yyUL8GASo6NS1ZWyrbRgE=.p7b',
+          signAlg: 'SHA256withECDSA',
+          storeFile: 'C:\\Users\\XIR09\\.ohos\\config\\default_ShatteredPixelDungeon_QN1yhT24qula4rqQyZ1M6yyUL8GASo6NS1ZWyrbRgE=.p12',
+          storePassword: '0000001b367f72a02624c85e6a3c748b573d82b8f07e4f0cc010248f4c3bb30916a3270a2e3be060e59764',
+        },
+      },
+    ],
+    products: [
+      {
+        name: 'default',
+        signingConfig: 'default',
+        targetSdkVersion: '26.0.0',
+        compatibleSdkVersion: '26.0.0',
+        runtimeOS: 'HarmonyOS',
+        buildOption: {
+          strictMode: {
+            caseSensitiveCheck: true,
+            useNormalizedOHMUrl: true,
+          },
+        },
+      },
+    ],
+    buildModeSet: [
+      {
+        name: 'debug',
+      },
+      {
+        name: 'release',
+      },
+    ],
+  },
+  modules: [
+    {
+      name: 'entry',
+      srcPath: './entry',
+      targets: [
+        {
+          name: 'default',
+          applyToProducts: [
+            'default',
+          ],
+        },
+      ],
+    },
+  ],
+}

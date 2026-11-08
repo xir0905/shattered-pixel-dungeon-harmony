@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "8f2e784c-cae0-44ef-9633-a0aa9cc9201f",
+    "createdAt": "2026-11-08T02:40:13.638Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_debug.png",
+      "sha256": "3331a82b9dd424bcdde7bcd9a521a1c0aee4481052898d7a28c4eb3e3707feac"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 网页版主菜单/标题场景截图（754x487），可能刚点击了左上区域。请描述：1) 当前界面（主菜单？英雄选择？）2) 所有可见按钮及其文字（如 开始游戏/继续/排行榜/日志/设置/关于 等）3) 各按钮在画面中的大致位置（左上/底部/右侧等）",
+      "sha256": "51aec69d523dc4b1e85ada7c045e1e7aaf180a82197a9911708ca88e893fd050"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏标题",
+        "visual_evidence": "SHATTERED PIXEL DUNGEON",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态标题文本，字体和颜色可自定义"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "背景描述文本",
+        "visual_evidence": "在你之前，也曾经有很多来自地面的英雄向这个地牢进发...准备好了吗？",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示多行说明性文字，支持换行和段落"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "主操作按钮",
+        "visual_evidence": "进入地牢",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.95,
+            "reason": "标准交互按钮，包含图标和文字，用于触发主要操作"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "f4e6b151-e5bf-42a7-91f5-9ff7928eb487",
+    "createdAt": "2026-11-08T09:17:54.690Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/log_now_x5.png",
+      "sha256": "d3068a7b55b0d643125d435ff5092eb41f9e7991db4a488c3f86dd222a4caf4e"
+    },
+    "requirements": {
+      "text": "这是像素游戏 SPD 顶部右侧的游戏日志文本区域放大图。请逐行精确转写日志文字内容（中文），注意区分每行消息，不要遗漏。",
+      "sha256": "4e3afaa4b1ad210da2f271a8b62c16890e433d54cff09af55a2c877dff060918"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 540,
+      "height": 240
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "版本号文本",
+        "visual_evidence": "截图顶部灰色区域显示 'v4.0.2' 的像素字体文本",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态文本内容，符合版本号展示需求"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "左侧红色图标按钮",
+        "visual_evidence": "红色背景方块内有白色像素化 'U' 形图案",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "具有明确点击区域和图标，符合按钮交互特征"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "右侧红色图标按钮",
+        "visual_evidence": "红色背景方块内有白色像素化三条横线图案",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "具有明确点击区域和图标，符合按钮交互特征"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

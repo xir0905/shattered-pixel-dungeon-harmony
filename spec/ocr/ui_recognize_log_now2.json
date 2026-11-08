@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "c55fd131-d3b6-4acc-b069-3e0f6e2791ea",
+    "createdAt": "2026-11-08T09:19:21.138Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/log_now_x8.png",
+      "sha256": "800356f8cafd2a7caf1e7b626ebc09f88b977d265b854473b466d186afd20ef1"
+    },
+    "requirements": {
+      "text": "这是像素游戏 SPD 左上角的游戏日志文本放大图，共几行消息。请逐行精确转写全部文字内容（中文），不要遗漏任何一行。",
+      "sha256": "405afe9c29c91c9bd17d817a97e9c2a778b2dd1784d6b37c93b084d6bccf45d9"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 520,
+      "height": 240
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "像素风格角色图像",
+        "visual_evidence": "截图中显示一个像素风格的卡通角色，具有橙色头发、黑色眼睛、白色上衣带蓝色装饰，站立姿态。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.95,
+            "reason": "用于显示静态像素图像，符合角色图像的呈现需求。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

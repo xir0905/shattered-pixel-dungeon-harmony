@@ -1,0 +1,244 @@
+apply plugin: 'java-library'
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+java.sourceCompatibility = java.targetCompatibility = appJavaCompatibility
+
+// Since GWT 2.10 the maven coordinates moved to the org.gwtproject groupId
+// (com.google.gwt only has versions <= 2.10.0 on Central).
+sourceSets.main.java.exclude '**/emu/**'
+
+configurations {
+    //jars fetched purely for unpacking + patching (exact artifacts, no transitives)
+    gwtUnpackJars
+    //raw jars that go onto the GWT compiler classpath as-is
+    gwtClasspathJars
+}
+
+dependencies {
+    //JVM-level compilation. Note gdx-freetype is needed because
+    //HtmlPlatformSupport's signatures reference the real FreeTypeFontGenerator;
+    //it is deliberately NOT on the GWT classpath (the emu stub replaces it there).
+    implementation project(':core')
+    implementation "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-freetype:$gdxVersion"
+    implementation "org.gwtproject:gwt-user:2.11.0"
+
+    gwtUnpackJars "org.gwtproject:gwt-user:2.11.0"
+    gwtUnpackJars "com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion:sources"
+
+    gwtClasspathJars "org.gwtproject:gwt-dev:2.11.0"
+    //binary backend jar: GWT loads Generator classes (gwtref ReflectionCacheGenerator,
+    //PreloaderBundleGenerator) reflectively from compiled bytecode. The patched gwtref
+    //generators are precompiled by compileBackendGen and their classes dir sits earlier
+    //on the classpath, shadowing this jar's stale gen bytecode; this jar still provides
+    //PreloaderBundleGenerator and other backend bytecode.
+    //gwt-user is excluded everywhere because the patched dir replaces it.
+    gwtClasspathJars("com.badlogicgames.gdx:gdx-backend-gwt:$gdxVersion") {
+        exclude group: 'org.gwtproject'
+        exclude group: 'com.google.gwt'
+    }
+    gwtClasspathJars "com.badlogicgames.gdx:gdx:$gdxVersion"
+    gwtClasspathJars "com.badlogicgames.gdx:gdx:$gdxVersion:sources"
+    gwtClasspathJars "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
+    gwtClasspathJars "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion:sources"
+    gwtClasspathJars("com.badlogicgames.gdx-controllers:gdx-controllers-gwt:$gdxControllersVersion") {
+        exclude group: 'org.gwtproject'
+        exclude group: 'com.google.gwt'
+    }
+    gwtClasspathJars("com.badlogicgames.gdx-controllers:gdx-controllers-gwt:$gdxControllersVersion:sources") {
+        exclude group: 'org.gwtproject'
+        exclude group: 'com.google.gwt'
+    }
+    gwtClasspathJars "org.json:json:20170516:sources"
+}
+
+def patchedGwtUserDir = layout.buildDirectory.dir('gwtClasspath/gwt-user').get().asFile
+def patchedBackendDir = layout.buildDirectory.dir('gwtClasspath/gdx-backend-gwt').get().asFile
+def patchedGenClassesDir = layout.buildDirectory.dir('gwtClasspath/gdx-backend-gwt-gen-classes').get().asFile
+def gwtDistDir = layout.buildDirectory.dir('dist').get().asFile
+def gwtWorkDir = layout.buildDirectory.dir('gwt-work').get().asFile
+
+def gwtModule = 'com.shatteredpixel.shatteredpixeldungeon.html.GdxDefinition'
+
+// Builds the patched replacements for gwt-user.jar and gdx-backend-gwt(-sources).jar.
+// Always rebuilds from scratch so a re-extract can never resurrect unpatched files.
+tasks.register('patchGwtUser') {
+    group = 'gwt'
+    description = 'Unpack gwt-user.jar and overlay the emul Object patch.'
+    outputs.dir(patchedGwtUserDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        def jarFile = configurations.gwtUnpackJars.files.find {
+            it.name.startsWith('gwt-user-') && !it.name.contains('sources')
+        }
+        project.delete(patchedGwtUserDir)
+        copy {
+            from zipTree(jarFile)
+            into patchedGwtUserDir
+        }
+        copy {
+            from 'patches/gwt-user'
+            into patchedGwtUserDir
+        }
+    }
+}
+
+tasks.register('patchBackend') {
+    group = 'gwt'
+    description = 'Unpack gdx-backend-gwt sources jar and overlay the emu patches.'
+    outputs.dir(patchedBackendDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        def jarFile = configurations.gwtUnpackJars.files.find {
+            it.name.startsWith('gdx-backend-gwt') && it.name.contains('sources')
+        }
+        project.delete(patchedBackendDir)
+        copy {
+            from zipTree(jarFile)
+            into patchedBackendDir
+        }
+        copy {
+            from 'patches/gdx-backend-gwt'
+            into patchedBackendDir
+        }
+    }
+}
+
+// GWT instantiates Generator classes from BYTECODE found on the compiler
+// classpath, so patched .java sources under patchedBackendDir never replace
+// the stale ReflectionCacheGenerator/ReflectionCacheSourceCreator classes
+// shipped inside the binary backend jar (stock 1.14.0 only splits the
+// reflection cache 2-way). Precompile the patched gen package and put its
+// classes FIRST on the GWT classpath to shadow the jar's bytecode.
+tasks.register('compileBackendGen', JavaCompile) {
+    group = 'gwt'
+    description = 'Compile the patched gwtref generator classes so their bytecode shadows the binary backend jar.'
+    dependsOn 'patchBackend'
+    source = fileTree(new File(patchedBackendDir, 'com/badlogic/gwtref/gen'))
+    classpath = configurations.gwtUnpackJars + configurations.gwtClasspathJars
+    options.encoding = 'UTF-8'
+    destinationDirectory = patchedGenClassesDir
+}
+
+tasks.register('copyWebapp', Copy) {
+    group = 'gwt'
+    from 'webapp'
+    into gwtDistDir
+}
+
+// GWT has no support for array clone() (its patched JDT synthesizes a
+// java.lang.Object.clone()[<arrayType>] binding per array type, which no Java
+// source can declare, see GWT issues #10144/#992). The shared game sources
+// stay untouched; instead a generated copy replaces the known array-clone
+// lines with java.util.Arrays.copyOf() calls and goes onto the GWT classpath.
+def arrayCloneLines = [
+        'com/shatteredpixel/shatteredpixeldungeon/actors/hero/abilities/duelist/Challenge.java': [114],
+        'com/shatteredpixel/shatteredpixeldungeon/items/Generator.java'                        : [344, 360, 378, 395, 412, 427, 439, 450, 462, 474, 503, 511, 519, 527, 535, 542, 558, 576, 600, 649, 651],
+        'com/shatteredpixel/shatteredpixeldungeon/items/Recipe.java'                           : [103, 132],
+        'com/shatteredpixel/shatteredpixeldungeon/items/artifacts/UnstableSpellbook.java'      : [95],
+        'com/shatteredpixel/shatteredpixeldungeon/items/scrolls/exotic/ScrollOfDivination.java': [70, 75],
+        'com/shatteredpixel/shatteredpixeldungeon/items/weapon/missiles/darts/Dart.java'       : [190],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/HallsBossLevel.java'                  : [440, 479],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/builders/BranchesBuilder.java'        : [55, 62],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/builders/FigureEightBuilder.java'     : [113, 121, 141],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/builders/LineBuilder.java'            : [57, 63],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/builders/LoopBuilder.java'            : [90, 96],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/builders/RegularBuilder.java'         : [154, 171],
+        'com/shatteredpixel/shatteredpixeldungeon/levels/rooms/secret/SecretRoom.java'         : [52],
+        'com/shatteredpixel/shatteredpixeldungeon/mechanics/ShadowCaster.java'                 : [91],
+        'com/shatteredpixel/shatteredpixeldungeon/messages/Languages.java'                     : [90, 95],
+        'com/shatteredpixel/shatteredpixeldungeon/ui/TitleBackground.java'                     : [285, 291, 344, 350, 471, 481, 607, 617],
+]
+
+def generatedGwtSrcDir = layout.buildDirectory.dir('generated/gwt-src').get().asFile
+
+tasks.register('generateGwtSources') {
+    group = 'gwt'
+    description = 'Copy core/SPD-classes sources for the GWT classpath, rewriting array clone() calls.'
+    outputs.dir(generatedGwtSrcDir)
+    outputs.upToDateWhen { false }
+    doLast {
+        project.delete(generatedGwtSrcDir)
+        [
+                'core'       : '../core/src/main/java',
+                'spd-classes': '../SPD-classes/src/main/java',
+        ].each { name, src ->
+            copy {
+                from src
+                into new File(generatedGwtSrcDir, name)
+            }
+        }
+        // Matches simple, array-index and dotted receivers, e.g. "probs", "map",
+        // "rounding[distance]", "PathFinder.distance", "POTION.defaultProbs";
+        // replaceAll also handles lines with two clone() calls (Generator:649).
+        def cloneCall = /([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[^\]]+\])?)\.clone\(\)/
+        arrayCloneLines.each { relPath, lineNums ->
+            def f = new File(new File(generatedGwtSrcDir, 'core'), relPath)
+            if (!f.exists()) {
+                throw new GradleException("array-clone transform: missing ${relPath}")
+            }
+            def lines = f.getText('UTF-8').readLines()
+            lineNums.each { ln ->
+                def idx = ln - 1
+                def before = lines[idx]
+                lines[idx] = before.replaceAll(cloneCall, 'java.util.Arrays.copyOf($1, $1.length)')
+                if (lines[idx] == before) {
+                    throw new GradleException("array-clone transform: line ${ln} of ${relPath} has no array clone(): ${before}")
+                }
+            }
+            f.write(lines.join('\n') + '\n', 'UTF-8')
+        }
+    }
+}
+
+// The patched dirs replace gwt-user.jar / gdx-backend-gwt(-sources).jar on the
+// GWT classpath; game code resolves through GWT's classpath source lookup.
+// core/SPD-classes come from generateGwtSources (array clone() rewritten).
+def gwtCompilerClasspath = files(
+        patchedGenClassesDir,
+        'src/main/java',
+        new File(generatedGwtSrcDir, 'core'),
+        new File(generatedGwtSrcDir, 'spd-classes'),
+        '../services/src/main/java',
+        patchedGwtUserDir,
+        patchedBackendDir
+) + configurations.gwtClasspathJars
+
+tasks.register('gwtDraftCompile', JavaExec) {
+    group = 'gwt'
+    description = 'GWT draft (fast, unoptimized) compile of the web build into build/dist.'
+    dependsOn 'patchGwtUser', 'patchBackend', 'compileBackendGen', 'copyWebapp', 'classes', 'generateGwtSources'
+    workingDir = projectDir
+    mainClass = 'com.google.gwt.dev.Compiler'
+    classpath = gwtCompilerClasspath
+    maxHeapSize = '4g'
+    jvmArgs '-Dfile.encoding=UTF-8', '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
+    args = [
+            '-draftCompile',
+            '-localWorkers', String.valueOf(Runtime.getRuntime().availableProcessors()),
+            '-style', 'PRETTY',
+            '-logLevel', 'INFO',
+            '-gen', layout.buildDirectory.dir('generated-sources').get().asFile.absolutePath,
+            '-workDir', gwtWorkDir.absolutePath,
+            '-war', gwtDistDir.absolutePath,
+            gwtModule
+    ]
+}
+
+tasks.register('gwtCompile', JavaExec) {
+    group = 'gwt'
+    description = 'GWT production compile of the web build into build/dist.'
+    dependsOn 'patchGwtUser', 'patchBackend', 'compileBackendGen', 'copyWebapp', 'classes', 'generateGwtSources'
+    workingDir = projectDir
+    mainClass = 'com.google.gwt.dev.Compiler'
+    classpath = gwtCompilerClasspath
+    maxHeapSize = '4g'
+    jvmArgs '-Dfile.encoding=UTF-8', '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
+    args = [
+            '-localWorkers', String.valueOf(Runtime.getRuntime().availableProcessors()),
+            '-style', 'OBFUSCATED',
+            '-logLevel', 'WARN',
+            '-workDir', gwtWorkDir.absolutePath,
+            '-war', gwtDistDir.absolutePath,
+            gwtModule
+    ]
+}

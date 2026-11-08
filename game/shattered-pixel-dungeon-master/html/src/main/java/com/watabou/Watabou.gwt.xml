@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exposes the SPD-classes sources to GWT. Module package = com.watabou, so
+     an empty source path scans every classpath entry for com/watabou/**. -->
+<module>
+	<source path=""/>
+</module>

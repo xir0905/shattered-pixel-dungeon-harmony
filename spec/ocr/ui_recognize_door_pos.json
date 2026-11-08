@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "0526fb59-79f4-4ca1-a05b-ed648b60d9b7",
+    "createdAt": "2026-11-08T07:57:12.573Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/gldump_door.png",
+      "sha256": "6caf19d1566843afa0730e21392606f6743be536fbfd3fa6d2acf910c0b45813"
+    },
+    "requirements": {
+      "text": "这张 388x800 截图是 Shattered Pixel Dungeon 的地牢视图（16px 瓦片）。请精确回答：1) 画面中所有\"门\"（door，木门/开着的门/门框）的像素位置，用 bbox 格式 [x1,y1,x2,y2] 给出，特别注意墙上的门形缺口；2) 英雄角色的像素 bbox；3) 门的当前状态是开着还是关着。只需要这三个答案，不需要组件建议。",
+      "sha256": "c3b0d6e6d2ac39b8105483f39deb2eb44c89d82ae48b8bdf39cd1ae350d0db52"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 388,
+      "height": 800
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "门形缺口",
+        "visual_evidence": "位于画面中央偏左的石墙中，有一个由浅灰色砖块构成的垂直矩形缺口，两侧为完整石墙，缺口内无实体阻挡，呈现通道形态。",
+        "component_candidates": [
+          {
+            "name": "Unknown",
+            "confidence": 0.95,
+            "reason": "该缺口为游戏地图瓦片的一部分，非标准 UI 控件，无直接对应的 ArkUI 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "英雄角色",
+        "visual_evidence": "位于画面中央偏右的通道中，一个像素风格的角色，身着棕色上衣和蓝色裤子，面向右侧，站立于灰色地砖上。",
+        "component_candidates": [
+          {
+            "name": "Unknown",
+            "confidence": 0.95,
+            "reason": "该角色为游戏内实体，非 UI 组件，无直接对应的 ArkUI 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "状态栏",
+        "visual_evidence": "屏幕顶部左侧显示红色血条（19/20）和角色头像，右侧显示数字 0:02 和两个图标按钮。",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.8,
+            "reason": "用于水平排列血条、头像和右侧图标按钮。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色头像和右侧图标按钮。"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.75,
+            "reason": "用于显示血量数值和计时器数字。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部信息栏",
+        "visual_evidence": "屏幕底部显示绿色和白色文字，内容为游戏提示和战斗结果，左侧有放大镜和时钟图标，右侧有物品栏格子。",
+        "component_candidates": [
+          {
+            "name": "Column",
+            "confidence": 0.8,
+            "reason": "用于垂直排列文字信息和底部工具栏。"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示多行游戏提示和战斗结果文字。"
+          },
+          {
+            "name": "Row",
+            "confidence": 0.75,
+            "reason": "用于水平排列左侧图标和右侧物品栏。"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示放大镜、时钟图标和物品栏中的物品图标。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": [
+      "门形缺口和英雄角色属于游戏地图和实体，非 UI 组件，无法推荐具体 ArkUI 组件。",
+      "截图中未明确显示门的开关状态，仅能观察到为通道形态，无法确定是开着还是关着。"
+    ]
+  }
+}

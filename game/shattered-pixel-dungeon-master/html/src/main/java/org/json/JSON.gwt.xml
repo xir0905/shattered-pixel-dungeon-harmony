@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exposes the org.json sources jar (json-20170516-sources.jar) to GWT.
+     Module package = org.json, so an empty source path scans every classpath
+     entry for org/json/**. Only the classes used by the game are kept; the
+     remaining org.json classes are excluded (they pull in JRE APIs GWT does
+     not emulate: Properties, java.net HTTP, XML machinery, JSONStringer). -->
+<module>
+	<source path="">
+		<exclude name="CDL.java"/>
+		<exclude name="Cookie.java"/>
+		<exclude name="CookieList.java"/>
+		<exclude name="HTTP.java"/>
+		<exclude name="HTTPTokener.java"/>
+		<exclude name="JSONML.java"/>
+		<exclude name="JSONStringer.java"/>
+		<exclude name="JSONWriter.java"/>
+		<exclude name="Property.java"/>
+		<exclude name="XML.java"/>
+		<exclude name="XMLTokener.java"/>
+	</source>
+</module>

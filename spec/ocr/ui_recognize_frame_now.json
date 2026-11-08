@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "8968d289-25f8-417a-8d87-7e1eb2d8e5d5",
+    "createdAt": "2026-11-08T09:27:53.827Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/frame_now.png",
+      "sha256": "10d78d4a5daa8ddb43b8311a0ea018aff49cc1a0eadd194b1a238f7a499265f5"
+    },
+    "requirements": {
+      "text": "这是像素地牢游戏 SPD（鸿蒙移植版）的游戏截图。请描述：1) 英雄角色在画面中的位置（大致坐标，图片为388x800）和朝向、状态；2) 英雄周围可见的地形（房间/走廊/门/楼梯/草地）；3) 画面中是否有门（木门），若有请给出位置；4) 左上角日志文字内容；5) 画面中其他可见的生物或物品。",
+      "sha256": "23bb9ccdd65597fc091bbd4c9a9a21a14b83336400f8d2ca53abfde198c0db97"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 388,
+      "height": 800
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "英雄角色",
+        "visual_evidence": "左下角像素风格角色，橙色头发，白色上衣，站立姿态",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "用于显示像素角色图像"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "生命值条",
+        "visual_evidence": "顶部红色长条，显示19/20",
+        "component_candidates": [
+          {
+            "name": "ProgressBar",
+            "confidence": 0.85,
+            "reason": "用于显示角色当前生命值比例"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "日志文本区域",
+        "visual_evidence": "底部绿色文字，包含多行游戏提示和战斗记录",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示多行游戏日志文本"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "物品栏",
+        "visual_evidence": "底部横向排列的多个格子，部分格子内有图标如投石、药水",
+        "component_candidates": [
+          {
+            "name": "Grid",
+            "confidence": 0.8,
+            "reason": "用于布局物品栏格子"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示物品图标"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "功能按钮",
+        "visual_evidence": "左下角两个圆形图标，分别为时钟和放大镜",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "用于触发游戏功能如暂停或查看地图"
+          }
+        ]
+      },
+      {
+        "id": "component-6",
+        "name": "右上角菜单按钮",
+        "visual_evidence": "右上角红色背景图标，包含三条横线和对话框符号",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.8,
+            "reason": "用于打开菜单或日志"
+          }
+        ]
+      },
+      {
+        "id": "component-7",
+        "name": "地形砖块",
+        "visual_evidence": "灰色砖墙、绿色草地、棕色木门、深色楼梯",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "用于显示不同地形的像素贴图"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

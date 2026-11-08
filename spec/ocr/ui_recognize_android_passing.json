@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "1fa277a5-dbcb-4186-80c2-d6847aab8ffc",
+    "createdAt": "2026-11-08T08:38:00.468Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/经过门状态.jpg",
+      "sha256": "2a1f13c6aed5938e9a17450b7e7ac53e4c77ca39c6718f7fb798e9d3ebf131ae"
+    },
+    "requirements": {
+      "text": "这是Shattered Pixel Dungeon安卓版游戏截图（英雄正在经过/穿过门）。请精确描述：1) 画面中门的位置和外观；2) 门此刻的样式：门是打开的吗？门板转向哪边？门洞里露出什么（黑暗/地板）？颜色特征？；3) 英雄位置及其相对门的方向；4) 与关闭的门相比，打开的门有哪些可见差异；5) 屏幕上任何其他显著特征。",
+      "sha256": "0e90dae4228e04d0537abad80313bb56b0b6b9ab74ea8e576314372e10bcb86a"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 589,
+      "height": 550
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "像素风格游戏场景",
+        "visual_evidence": "画面显示像素风格的角色和砖墙背景，角色位于左侧，右侧有深色矩形区域疑似门洞",
+        "component_candidates": [
+          {
+            "name": "Unknown",
+            "confidence": 0.9,
+            "reason": "截图内容为游戏画面，非标准UI组件，无对应ArkUI组件"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": [
+      "无法确定门是否打开或关闭，因截图中门洞区域被黑色遮挡，无可见门板或转向细节",
+      "无法确认英雄是否正在穿过门，因无动态或位置变化证据",
+      "无法判断门洞内露出内容（黑暗/地板），因区域被遮挡",
+      "无法比较打开与关闭门的可见差异，因无关闭门的参照"
+    ]
+  }
+}

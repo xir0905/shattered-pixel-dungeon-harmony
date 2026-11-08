@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "75986281-ad04-4cc1-8c64-9d738554c2b7",
+    "createdAt": "2026-11-08T10:01:36.489Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/scr_lock.jpeg",
+      "sha256": "4e0500ee4d6da52b439a1abc93d7b63c3341bce7d6adc81bc1a3936a0396f24e"
+    },
+    "requirements": {
+      "text": "这是 HarmonyOS 手机当前屏幕截图（1260x2720）。请描述：1) 屏幕当前是什么状态（锁屏/解锁后桌面/应用界面/黑屏）；2) 如果是锁屏，锁屏上有什么元素（时间、日期、图标）；3) 屏幕上可见的任何文字。",
+      "sha256": "b52616549d6d013af2f0f9b81fd25b28c21756a5ce9db9caf723f9bda78a90cc"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "时间显示 06:01",
+        "visual_evidence": "屏幕中央大号数字显示 '06' 和 '01'，代表当前时间为 6 点 01 分。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态或动态文本，适合展示时间数字。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "日期显示 '11月8日 星期日 九月三十'",
+        "visual_evidence": "时间下方显示公历和农历日期，文字为 '11月8日 星期日' 和 '九月三十'。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示多行日期文本，支持不同字体和颜色样式。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "电池与充电状态图标",
+        "visual_evidence": "日期右侧显示电量 '32' 和闪电符号，表示当前电量及正在充电。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示电池和充电状态的图标。"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.75,
+            "reason": "用于显示电量百分比数字 '32'。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "指纹识别图标",
+        "visual_evidence": "屏幕底部中央有一个圆形指纹图案，用于指纹解锁。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "用于显示指纹图形，作为解锁提示。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

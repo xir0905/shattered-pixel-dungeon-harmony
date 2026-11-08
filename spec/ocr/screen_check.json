@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "90724697-547a-4285-98e8-920755805e12",
+    "createdAt": "2026-11-08T11:55:42.389Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/screen_check.png",
+      "sha256": "532ee5d11abb7540208ba125663bc43742991c42cb5920ec01dbb1d97fe636ef"
+    },
+    "requirements": {
+      "text": "这是游戏《破碎的像素地牢》的截图。请逐字读出当前界面所有可见文字（按钮、标签、消息、对话框），并说明：1) 这是哪个界面；2) 是否有对话框或提示弹出；3) 哪个按钮当前处于高亮/按下状态；4) 每个菜单项的名称和大致垂直位置（用屏幕高度百分比）。",
+      "sha256": "7d87ccf64adf59e1079f982167871fbc75daa534617e1e53793438eb0391a842"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1261,
+      "height": 2600
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "游戏标题",
+        "visual_evidence": "SHATTERED PIXEL DUNGEON",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态标题文字"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "进入地牢按钮",
+        "visual_evidence": "进入地牢",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.95,
+            "reason": "可点击的主功能按钮，带图标和文字"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "支持游戏开发按钮",
+        "visual_evidence": "支持游戏开发",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "带金币图标的可点击按钮"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "排行榜按钮",
+        "visual_evidence": "排行榜",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带柱状图图标的菜单项"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "日志按钮",
+        "visual_evidence": "日志",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带书本图标的菜单项"
+          }
+        ]
+      },
+      {
+        "id": "component-6",
+        "name": "游戏新闻按钮",
+        "visual_evidence": "游戏新闻",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带卷轴图标的菜单项"
+          }
+        ]
+      },
+      {
+        "id": "component-7",
+        "name": "改动按钮",
+        "visual_evidence": "改动",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带循环箭头图标的菜单项"
+          }
+        ]
+      },
+      {
+        "id": "component-8",
+        "name": "设置按钮",
+        "visual_evidence": "设置",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带齿轮图标的菜单项"
+          }
+        ]
+      },
+      {
+        "id": "component-9",
+        "name": "关于按钮",
+        "visual_evidence": "关于",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "带箭头图标的菜单项"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

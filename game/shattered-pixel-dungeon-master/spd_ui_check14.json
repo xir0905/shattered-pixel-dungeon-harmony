@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "a8596163-db2c-47cf-94ff-dfc858018b04",
+    "createdAt": "2026-11-08T02:52:01.905Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "game/shattered-pixel-dungeon-master/spd_flow.png",
+      "sha256": "dae672704236fac9c221e39bffb94cdd96b949b766e1eeb89d88dcb6aec56e37"
+    },
+    "requirements": {
+      "text": "这是 Shattered Pixel Dungeon 网页版：点击\"开始\"按钮后的截图（754x487）。请确认：1) 是否为俯视像素地牢游戏画面（石墙/地板/门/走廊）？2) 战士角色（英雄）是否在画面中可见？3) 游戏 UI 是否显示（左上角深度\"深度 1\"、血条/HP、状态栏、物品栏、底部日志区）？4) 是否有任何渲染异常（花屏/黑块/错位）？",
+      "sha256": "b090a2154e2d6924872561cb505dc7d432234cfb6e4964bdf722ba6242e7095f"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 754,
+      "height": 487
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "继续按钮",
+        "visual_evidence": "屏幕中央偏下位置有一个带像素风格边框的按钮，内含文字“继续”和一个向右箭头图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.9,
+            "reason": "标准的可点击按钮，用于触发“继续”操作，符合 ArkUI 中 Button 组件的典型用途。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "对话文本框",
+        "visual_evidence": "屏幕中央显示多行白色中文文本，描述游戏背景故事，背景为半透明深色矩形。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示多行静态文本内容，可配合容器组件实现对话框样式。"
+          },
+          {
+            "name": "RichText",
+            "confidence": 0.75,
+            "reason": "若文本包含格式或段落控制，RichText 可提供更灵活的排版支持。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "底部状态提示",
+        "visual_evidence": "屏幕右下角显示白色文字“下楼中...”，表示当前游戏状态。",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示简短状态信息，符合 Text 组件的基本功能。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "背景游戏场景",
+        "visual_evidence": "整个屏幕背景为像素风格的地牢场景，包含石墙、拱门、楼梯、植被和光影效果。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "作为静态背景图使用，Image 组件可承载该像素艺术画面。"
+          },
+          {
+            "name": "Canvas",
+            "confidence": 0.7,
+            "reason": "若背景为动态渲染或包含复杂图层，Canvas 可用于自定义绘制。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

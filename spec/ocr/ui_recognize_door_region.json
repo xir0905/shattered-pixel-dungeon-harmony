@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "951bbd2c-4569-4b3e-abf9-b84c860b3ef7",
+    "createdAt": "2026-11-08T08:09:54.788Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/door_region_x3.png",
+      "sha256": "ab28120f470e9d96f0c21bf8bbaf94acaae16d83bf1c1ff1c3b20f8baee86ba0"
+    },
+    "requirements": {
+      "text": "这是像素地牢游戏截图的局部放大（原坐标x=150-340,y=330-440，3倍放大）。请精确描述：1) 图中有哪些游戏对象（角色/怪物/门/箱子/楼梯/墙壁等）及其相对位置；2) 木棕色物体（画面中部偏左，带暗红色边缘）是什么，它是否是门，门是打开还是关闭状态；3) 画面右侧灰色的 repeating 图案是什么；4) 各对象的颜色特征。",
+      "sha256": "3ee777ba7764a5972ba23a3ae5089c1f6abccce38086c9fcdff610888c515322"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 570,
+      "height": 330
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "角色",
+        "visual_evidence": "画面左侧有一个橙色头发、穿蓝色上衣和黑色裤子的像素角色，面向右侧站立。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "角色为静态像素图，适合用 Image 组件渲染。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "木门",
+        "visual_evidence": "画面中部偏左有一个竖直的木棕色矩形物体，边缘带暗红色，嵌在灰色砖墙中。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "门为固定像素图，可用 Image 组件表示其关闭状态。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "砖墙背景",
+        "visual_evidence": "背景为灰色砖块图案，横向排列，构成墙壁。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "重复砖块图案可作为背景图使用 Image 组件。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "绿色植被",
+        "visual_evidence": "画面右侧有绿色像素块组成的垂直重复图案，类似藤蔓或草丛。",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.75,
+            "reason": "重复植被图案适合用 Image 组件作为装饰背景。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

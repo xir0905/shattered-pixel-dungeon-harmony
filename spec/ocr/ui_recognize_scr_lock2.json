@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "f1f56323-d30a-45ba-a071-254fb1acdc9d",
+    "createdAt": "2026-11-08T10:02:33.928Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/scr_lock2.jpeg",
+      "sha256": "95b75a8e30fe8465a607de66d35c8a5b6853307b0ebd45924170dc39c5c5bce8"
+    },
+    "requirements": {
+      "text": "这是 HarmonyOS 手机屏幕截图（1260x2720）。请描述屏幕当前状态：1) 是否为锁屏（显示大号时间）还是密码/指纹输入界面还是已解锁的桌面/应用？2) 屏幕上所有可见文字和按钮（如数字键盘、紧急呼叫、取消等）。",
+      "sha256": "4db827f4c452d48afa012bdc1c89d9c83e13ee7dd1577170d4993dc122ba1396"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "请勿遮挡屏幕顶端",
+        "visual_evidence": "屏幕中上部显示白色文字“请勿遮挡屏幕顶端”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示静态提示文本"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "防误触模式",
+        "visual_evidence": "屏幕中下部显示白色文字“防误触模式”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示模式标题"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "在下方滑动两次可强行退出",
+        "visual_evidence": "“防误触模式”下方显示灰色小字说明",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示辅助说明文字"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "圆形滑动区域",
+        "visual_evidence": "屏幕底部中央有一个白色圆环，提示用户滑动操作",
+        "component_candidates": [
+          {
+            "name": "GestureDetector",
+            "confidence": 0.8,
+            "reason": "用于检测滑动手势，配合圆形视觉提示"
+          },
+          {
+            "name": "Shape",
+            "confidence": 0.75,
+            "reason": "用于绘制圆形视觉反馈区域"
+          }
+        ]
+      },
+      {
+        "id": "component-5",
+        "name": "状态栏提示“无 SIM 卡 | 仅限紧急...”",
+        "visual_evidence": "屏幕左上角显示状态栏文字",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示状态栏信息"
+          }
+        ]
+      },
+      {
+        "id": "component-6",
+        "name": "锁形图标",
+        "visual_evidence": "屏幕顶部中央有一个锁形图标",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示状态图标"
+          }
+        ]
+      }
+    ],
+    "global_observations": [
+      "当前界面为防误触模式，非锁屏或密码输入界面",
+      "屏幕顶部有状态栏信息，底部有手势操作提示"
+    ],
+    "uncertainties": []
+  }
+}

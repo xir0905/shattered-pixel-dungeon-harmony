@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit trunk//EN" "http://www.gwtproject.org/doctype/2.8.0/gwt-module.dtd">
+<module rename-to="shattered">
+	<inherits name="com.badlogic.gdx.backends.gdx_backends_gwt"/>
+	<inherits name="com.badlogic.gdx.controllers.controllers-gwt"/>
+	<!-- Game code: package-prefix modules make core/SPD-classes/services/org.json
+	     sources visible to GWT via classpath scanning. -->
+	<inherits name="com.shatteredpixel.shatteredpixeldungeon.SPDCore"/>
+	<inherits name="com.watabou.Watabou"/>
+	<inherits name="org.json.JSON"/>
+
+	<entry-point class="com.shatteredpixel.shatteredpixeldungeon.html.HtmlLauncher"/>
+
+	<set-configuration-property name="gdx.assetpath" value="../core/src/main/assets"/>
+	<!-- Trailing slash matters: the preloader bundle generator concatenates "assets/" onto this value.
+	     Pointing it at the same dir as -war keeps the whole deployable site in build/dist. -->
+	<set-configuration-property name="gdx.assetoutputpath" value="build/dist/"/>
+
+	<!-- Reflectable game classes (saves/rankings deserialization etc.) -->
+	<extend-configuration-property name="gdx.reflect.include" value="com.shatteredpixel.shatteredpixeldungeon"/>
+	<extend-configuration-property name="gdx.reflect.include" value="com.watabou"/>
+
+	<source path="">
+		<exclude name="**/emu/**"/>
+	</source>
+	<super-source path="emu"/>
+</module>

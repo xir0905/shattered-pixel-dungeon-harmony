@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "61ab79eb-00ce-4b7c-a6c4-32bd62f49e2c",
+    "createdAt": "2026-11-08T08:33:39.038Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/log_after_door.png",
+      "sha256": "b42b437bc95035f875f9f21fd660d00b3e7b3727e9677415e75a989a872d146f"
+    },
+    "requirements": {
+      "text": "这是像素地牢游戏底部日志区域的放大截图。请逐行精确读出所有绿色/白色日志文字内容（中文），保持原文顺序，不要遗漏任何一行。",
+      "sha256": "0c9a3f74ea23ee0c09b589e7cb14e6b8836960da6ef273f8eac7ec13a5e7a396"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 776,
+      "height": 240
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "日志文本区域",
+        "visual_evidence": "三行绿色和白色像素字体文本，内容为：'你获得了:投石。'、'你的指南有新的建议要告诉你!点击屏幕右上角闪烁的日志按钮进行阅读。'、'你击败了下水道巨蛇。'",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示多行纯文本内容，支持不同颜色（绿色/白色）和像素字体样式。"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "状态栏图标按钮",
+        "visual_evidence": "左侧两个灰色方块内分别有白色时钟和放大镜图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "用于承载可点击的图标，通常配合 Image 或 Icon 组件实现视觉效果。"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "物品栏格子",
+        "visual_evidence": "中间一排四个灰色方格，其中两个格子内有物品图标（棕色弯管和灰色圆石）及数字 '0/20' 和 '2'。",
+        "component_candidates": [
+          {
+            "name": "Grid",
+            "confidence": 0.8,
+            "reason": "适合布局多个等大小的格子，每个格子可嵌套 Image 和 Text 组件显示物品和数量。"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "背包图标按钮",
+        "visual_evidence": "最右侧灰色方块内有一个棕色背包图标。",
+        "component_candidates": [
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "用于承载可点击的背包图标，通常配合 Image 组件实现视觉效果。"
+          }
+        ]
+      }
+    ],
+    "global_observations": [],
+    "uncertainties": []
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "5db15485-7aa9-4ef1-b407-163aad3493b3",
+    "createdAt": "2026-11-08T10:03:19.922Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/scr_lock3.jpeg",
+      "sha256": "58f0e4da8bfb1e71494cfda212f3652107e204ec501b36e4f770c02d45ddd5e9"
+    },
+    "requirements": {
+      "text": "HarmonyOS 手机屏幕截图（1260x2720）。简要回答：屏幕现在是 (A)锁屏界面(大号时间+指纹图标) (B)防误触模式 (C)密码/PIN输入界面 (D)已解锁桌面 (E)应用界面？如果可见请列出关键文字。",
+      "sha256": "e9049178af2fc986a406f5e81c3f067ba2982523f6e695f5f42c89ea80771b68"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "大号时间显示",
+        "visual_evidence": "屏幕中央显示 '06 02'，字体巨大，为锁屏界面典型时间样式",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.9,
+            "reason": "用于显示大号数字时间，支持自定义字体大小和样式"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "日期与农历信息",
+        "visual_evidence": "时间下方显示 '11月8日 星期日' 和 '九月三十'，字体较小",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.85,
+            "reason": "用于显示多行辅助文本，支持不同字号和颜色"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "电池与充电状态图标",
+        "visual_evidence": "日期右侧显示 '32' 和闪电图标，表示电量与充电状态",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示电池和充电状态的静态图标"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.75,
+            "reason": "用于显示电量百分比数字"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "指纹识别图标",
+        "visual_evidence": "屏幕底部中央有一个圆形指纹图案图标",
+        "component_candidates": [
+          {
+            "name": "Image",
+            "confidence": 0.9,
+            "reason": "用于显示指纹识别的图形提示，通常为静态或动画图标"
+          }
+        ]
+      }
+    ],
+    "global_observations": [
+      "界面为锁屏界面，包含时间、日期、电量、指纹识别提示等典型元素",
+      "背景为动态流体渐变效果，可能由自定义绘制或背景图片实现"
+    ],
+    "uncertainties": []
+  }
+}
