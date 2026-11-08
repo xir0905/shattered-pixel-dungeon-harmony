@@ -399,6 +399,16 @@ struct Index {
           Text('Loading')
             .fontColor('#9a9a9a')
             .fontSize(16)
+          // Port credit — shown only during the cold-start loading overlay.
+          Text('此版本由b站up主xir_9移植')
+            .fontColor('#7d7d7d')
+            .fontSize(14)
+            .margin({ top: 28 })
+            .textAlign(TextAlign.Center)
+          Text('仅供学习，无付费')
+            .fontColor('#7d7d7d')
+            .fontSize(14)
+            .textAlign(TextAlign.Center)
         }
         .width('100%')
         .height('100%')
