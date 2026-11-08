@@ -29,7 +29,7 @@
 - [ ] **帧率 profiling**：CDP `Performance.enable`/tracing 测 GameScene 帧时间；确认 60fps 达标；关注高刷设备（120Hz rAF 下 SPD 为 delta-time 逻辑，应无加速问题，需实测）。
 - [ ] **内存与 GC**：GWT long 模拟（双 Number）带来的 GC 压力；关注长时间游玩的内存曲线。
 - [ ] **后台回收策略**：开发期间两次观察到 app 进程被系统回收（pid 消失）。SPD 靠 IndexedDB 自动存档，需确认每次楼层切换/关键动作都落盘，进程被杀不丢进度。
-- [ ] **appfreeze 排查**：根目录遗留 appfreeze.log（538KB），确认冻结问题是否已被门 bug 修复带走（GL 死循环嫌疑），复现验证后清理。
+- [x] **appfreeze 排查**（2026-11-08 完成，C-7）：两份归档日志（合计 538KB）均为**模拟器** THREAD_BLOCK_6S，主线程栈卡在 ArkWeb 引擎同步初始化（`NWebHelper::GetWebEngine` → `libarkweb_engine.so`）——**门 bug/GL 死循环嫌疑被栈证据否定**（门 bug 在 nwebspawn 渲染进程，结构上不可能阻塞应用主线程）。真机 ArkWeb 初始化仅 ~0.7s（C-3 实测），修复期至今真机大量冷启动/游玩零冻结。结论：平台/模拟器环境特性，真机不受影响，不改代码关闭。详见 `spec/appfreeze-analysis.md`。
 
 ## D. 平台集成 / 功能补全（P2）
 
