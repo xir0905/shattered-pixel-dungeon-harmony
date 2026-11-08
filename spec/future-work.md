@@ -27,7 +27,7 @@
 - [x] **首屏加载体验**（2026-11-08 完成，C-2）：冷启动黑屏期（0.5-3.7s）替换为原生 loading overlay。实现：`HtmlLauncher.ReadySignalingListener` 在 render #3（标题已呈现）发 `console.log("[SPD] game-ready")` → 宿主 `onConsole` 捕获隐藏 overlay（`Index.ets`，20s 兜底）。hilog 精确锚点：overlay 于 **+3.20s** 隐藏；A/B 启动耗时无回归（~4.1s 持平）。验证与数据见 `spec/startup-time.md`。GWT splash 方案未采用（原生 overlay 更早可用）。
 - [x] **启动耗时测量**（2026-11-08 完成，C-3）：`aa start` → 标题可交互 ≈ **3.7~4.2s**（体感 5-8s 偏悲观）。工具 `tools/measure-startup.ps1`（截图轮询+像素分类+hilog 相位锚点），基线与相位分解见 `spec/startup-time.md`：系统启动 ~0.5s / ArkWeb+HTML ~0.7s / 4.67MB JS 解析 ~1.1s / 资产+初始化 ~1.5-2s。优化前后对比复跑同一脚本即可。
 - [x] **帧率 profiling**（2026-11-08 完成，C-4）：`tools/devtools/spd_fps_sample.js`（CDP rAF 帧间隔采样）。**60fps 达标、全程零掉帧**：TitleScene/GameScene 待机 60.6fps @60Hz 锁定（p99=16.6ms，零帧超 20ms）；地图拖动时 LTPO 面板自动升 120Hz，rAF 跟随 ~122fps（p50=8.3ms，连续 1125 帧零掉帧，仅 1 帧升降频过渡 24.7ms）。120Hz 无加速风险已代码级确认：noosa `Game.update()` 用真 delta-time（`getDeltaTime()`+200ms 钳制），速度与帧率无关。详见 `spec/fps-profiling.md`。
-- [ ] **内存与 GC**：GWT long 模拟（双 Number）带来的 GC 压力；关注长时间游玩的内存曲线。
+- [x] **内存与 GC**（2026-11-08 完成，C-5）：`tools/devtools/spd_mem_sample.js`（CDP 堆采样+强制 GC 活集）。**无泄漏**：JS 活集 5min 零增长（16.1→15.9MB）；V8 容量进平台期（71MB）；PSS 全程稳定 387MB（Δ-37KB）。churn ~2.1MB/s 由 ~12s 周期 scavenge 消化，结合 C-4 零掉帧 → GC 停顿无帧率感知；GWT long 双 Number 开销含于 churn 内无异常。详见 `spec/memory-gc.md`。
 - [ ] **后台回收策略**：开发期间两次观察到 app 进程被系统回收（pid 消失）。SPD 靠 IndexedDB 自动存档，需确认每次楼层切换/关键动作都落盘，进程被杀不丢进度。
 - [x] **appfreeze 排查**（2026-11-08 完成，C-7）：两份归档日志（合计 538KB）均为**模拟器** THREAD_BLOCK_6S，主线程栈卡在 ArkWeb 引擎同步初始化（`NWebHelper::GetWebEngine` → `libarkweb_engine.so`）——**门 bug/GL 死循环嫌疑被栈证据否定**（门 bug 在 nwebspawn 渲染进程，结构上不可能阻塞应用主线程）。真机 ArkWeb 初始化仅 ~0.7s（C-3 实测），修复期至今真机大量冷启动/游玩零冻结。结论：平台/模拟器环境特性，真机不受影响，不改代码关闭。详见 `spec/appfreeze-analysis.md`。
 

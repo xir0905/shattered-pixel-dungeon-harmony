@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 2,
+  "status": "ok",
+  "producer": {
+    "tool": "recognize_ui_components",
+    "model": "Qwen3_VL_235B_A22B_Instruct",
+    "invocationId": "d3363057-1c00-4f0c-a84f-72f8ec75599c",
+    "createdAt": "2026-11-08T16:03:14.003Z"
+  },
+  "inputs": {
+    "image": {
+      "path": "spec/assets/device/mem_c5_gamescene.jpeg",
+      "sha256": "4e1db8dbb3d86b4296950cf0afe2231acbdf57189d62c072ce091f41a106af42"
+    },
+    "requirements": {
+      "text": "判断这是 Shattered Pixel Dungeon 的哪个界面：标题主菜单（有 START/进入地牢等按钮）还是游戏内场景（地牢地图+顶部状态条+底部快捷栏）？描述可见的 UI 元素。",
+      "sha256": "05a3f2a27d63aedcd413dc23c54685ce588ad5f4674fa4bee713895a418b9620"
+    }
+  },
+  "analysis": {
+    "canvas": {
+      "width": 1260,
+      "height": 2720
+    },
+    "visible_components": [
+      {
+        "id": "component-1",
+        "name": "顶部状态条",
+        "visual_evidence": "左上角显示角色头像、20/20血条、0/10和数字1；右上角显示版本号0.4.0.2和两个红色图标按钮",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.9,
+            "reason": "用于水平排列多个状态元素"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.85,
+            "reason": "用于显示角色头像和图标"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.8,
+            "reason": "用于显示数值如20/20、0/10、版本号"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.75,
+            "reason": "右上角红色图标按钮可能是功能按钮"
+          }
+        ]
+      },
+      {
+        "id": "component-2",
+        "name": "地牢地图区域",
+        "visual_evidence": "中央区域显示像素风格地牢地图，包含角色、木桶、石砖墙",
+        "component_candidates": [
+          {
+            "name": "Canvas",
+            "confidence": 0.9,
+            "reason": "适合绘制像素游戏地图和动态角色"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示地图瓦片、角色和木桶等静态图像元素"
+          }
+        ]
+      },
+      {
+        "id": "component-3",
+        "name": "底部快捷栏",
+        "visual_evidence": "底部显示多个格子，包含时钟、放大镜、物品图标、背包图标",
+        "component_candidates": [
+          {
+            "name": "Row",
+            "confidence": 0.9,
+            "reason": "用于水平排列快捷栏按钮"
+          },
+          {
+            "name": "Button",
+            "confidence": 0.85,
+            "reason": "每个格子都是可点击的功能按钮"
+          },
+          {
+            "name": "Image",
+            "confidence": 0.8,
+            "reason": "用于显示按钮图标"
+          },
+          {
+            "name": "Text",
+            "confidence": 0.75,
+            "reason": "用于显示物品数量如0/20、3"
+          }
+        ]
+      },
+      {
+        "id": "component-4",
+        "name": "底部提示文字",
+        "visual_evidence": "底部显示黄色文字“你回到了地牢的第1层。”",
+        "component_candidates": [
+          {
+            "name": "Text",
+            "confidence": 0.95,
+            "reason": "用于显示游戏提示信息"
+          }
+        ]
+      }
+    ],
+    "global_observations": [
+      "界面为游戏内场景，包含地牢地图、顶部状态条和底部快捷栏",
+      "符合Shattered Pixel Dungeon游戏内界面特征"
+    ],
+    "uncertainties": []
+  }
+}
