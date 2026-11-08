@@ -55,6 +55,7 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
     ├── appfreeze-analysis.md           ← appfreeze 归档日志分析（模拟器环境特性）
     ├── audio-loop-arkweb.md            ← D-1b：EOS 音乐死亡（上游 ended 回调未绑定）
     ├── rotation-resize.md              ← D-4：横屏/分屏 resize 链验证与 zoom 公式
+    ├── vibration.md                    ← D-5：震动反馈（ArkWeb 原生 navigator.vibrate）
     ├── assets/door|format|device/      ← 按主题归档的截图/日志
     └── ocr/                            ← 多模态识别结果 JSON
 ```

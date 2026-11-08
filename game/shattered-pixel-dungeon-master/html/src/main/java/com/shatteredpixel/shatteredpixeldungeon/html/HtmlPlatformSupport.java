@@ -78,6 +78,11 @@ public class HtmlPlatformSupport extends PlatformSupport {
 		return supportsVibrationJsni();
 	}
 
+	@Override
+	public void vibrate( int millis ) {
+		vibrateJsni( millis );
+	}
+
 	/* FONT SUPPORT */
 
 	@Override
@@ -210,6 +215,12 @@ public class HtmlPlatformSupport extends PlatformSupport {
 
 	private static native boolean supportsVibrationJsni() /*-{
 		return !!($wnd.navigator && $wnd.navigator.vibrate);
+	}-*/;
+
+	private static native void vibrateJsni( int millis ) /*-{
+		if ($wnd.navigator && $wnd.navigator.vibrate) {
+			$wnd.navigator.vibrate(millis);
+		}
 	}-*/;
 
 	private static native void measureFontMetricsJsni(String fontSpec, int size, float[] out) /*-{

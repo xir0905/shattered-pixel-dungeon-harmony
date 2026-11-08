@@ -37,10 +37,10 @@
 - [x] **返回手势处理**（D-2）：侧滑/返回键 → `Index.ets onBackPress`（gameReady 才拦截）→ runJavaScript 派发 Escape(27) keydown+keyup 到 document → SPDAction.BACK（游戏内 WndGame 菜单，桌面语义）；TitleScene → `HtmlLauncher.exit()` → `[SPD] exit-requested` console 信号 → onConsole → `terminateSelf`（真机验证进程退出）。
 - [x] **音频解锁**（D-3）：首触预 play 探测 NotAllowedError + `userActivation=true`，进游戏音效/音乐正常（真机验证）。
 - [x] **横屏/折叠屏适配**（D-4）：CDP viewport 仿真验证 resize 链（与物理旋转同路径）——横屏 canvas 2720×1261 精确 1:1 跟随、分屏模拟与逐字节复原均通过，标题/游戏 3+ 次 resize 循环零崩溃；zoom 公式核算：竖屏 9（实测吻合）/横屏 7（高度约束）/分屏 6，双轴取 min 构造防拉伸，SPD 横屏感知设计内建；`module.json5` 不锁方向与 SPD Android 一致；物理旋转/折叠手感需手动（`spec/rotation-resize.md`）。
-- [ ] **震动反馈**：SPD 有振动接口（Android 实现），可通过 ArkTS 注入 JS bridge（`@ohos.vibrator`）补上。
+- [x] **震动反馈**（2026-11-08 完成，D-5）：**零补丁完成**——ArkWeb 原生实现 `navigator.vibrate`（探测返回 true，真实震动），SPD 调用链断点仅在上游 `DefaultGwtInput.vibrate` 空实现；`HtmlPlatformSupport` 补 `vibrate()` override → JSNI `navigator.vibrate`（html 模块自有文件，无需 patches overlay）。真机 E2E 验证：CDP `Input.dispatchTouchEvent` 长按背包物品 1s → tooltip 弹出 + spy 捕获 `navigator.vibrate(50)`（`SPDSettings.vibration()` 默认开，设置开关由 `supportsVibration()` 自动使能）。详见 `spec/vibration.md`。
 - [ ] **多指/手势冲突**：系统手势区与游戏边缘点击的冲突检查（探索迷雾点击边缘格）。
 - [ ] **应用图标/启动页美化**：当前默认图标；设计 SPD 主题图标 + 启动闪屏，消除冷启动白屏观感。
-- [ ] **存档导出/备份**：IndexedDB 存档 → 导出到用户文件（供换机/重装恢复）；HarmonyOS 应用数据沙箱说明。
+- [ ] **存档导出/备份**：localStorage 存档（`gdxfile:`/`gdxmtime:` 键）→ 导出到用户文件（供换机/重装恢复）；HarmonyOS 应用数据沙箱说明。
 - [ ] **深色模式**：启动页/WebView 背景色跟随系统深色。
 
 ## E. 发布准备（P2-P3）
@@ -54,7 +54,7 @@
 ## F. 工程化 / 可维护性（P2）
 
 - [ ] **emu 回归测试集**：以 `fmt_test.js`（21 用例）为起点，扩成 GWT emu 回归套件：String.format 全转换、buffer subarray 语义、getDensity、getRelativeX/Y 坐标换算；GWT 重编译后跑一遍。
-- [ ] **修复 CDP 注入输入失效**：事件已到达页面且命中 canvas（t/m/p 计数验证），但游戏不响应导航。嫌疑：GWT DefaultGwtInput 监听的具体事件类型/坐标缩放。修好后可做真机 UI 冒烟自动化（进入游戏→开窗口→截图比对）。
+- [x] **修复 CDP 注入输入失效**（2026-11-08 完成，D-5 期间解决）：CDP `Input.dispatchTouchEvent` 可用配方——坐标必须用 **CSS 像素**（物理坐标 ÷ `1260/innerWidth`，dpr 3.25 下 ≈×0.308，物理坐标会整体偏移出屏），事件对为 `touchStart`（touchPoints 含 x/y/radiusX/radiusY/force）+ 延时 + `touchEnd`。真机验证长按注入成功（1s 按住触发 0.5s 阈值 onLongClick → tooltip + 振动链全通）。真机 UI 自动化输入通道已可用（CDP touch + uitest click）。
 - [ ] **调试工具文档化**：CDP 调试全流程（pid → fport → real_ws.txt → dump/tap/eval）写入 tools/devtools/README；注意 real_ws.txt 每次重启 app 后要刷新、fport 规则要随 pid 重建。
 - [ ] **构建产物哈希记录**：每次构建记录 permutation 哈希+SHA256 到 spec/build-log.md，出问题时可溯源部署了哪个版本。
 
