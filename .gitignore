@@ -16,3 +16,9 @@
 **/local.properties
 .preview
 dist/
+
+# 开发期调试残留（不纳入版本库）
+/game/shattered-pixel-dungeon-master/*.log
+/game/shattered-pixel-dungeon-master/spd_*.png
+/game/shattered-pixel-dungeon-master/spd_ui_check*.json
+/spec/assets/door/live/
