@@ -55,3 +55,130 @@ play 日志（`tools/devtools/spd_audio_hook.js` 探针）：
 
 - `__spdLoop` 读值判别：`undefined` = `setLooping` 从未对该元素执行；`boolean false` = 执行过但 `looping` 字段为 false（本次定位的关键一步）。
 - CDP fport（hdc 3.2.0f）：**语法是 `hdc fport <local> <remote>`，没有 `add` 关键字**；`fport add …` 会把 `add` 当 localnode 解析报 `Incorrect forward command`。`fport rm` 完整规则串。
+
+## D-1c：冷启动标题音乐无声 —— 自动播放策略（2026-11-09 修复）
+
+### 症状
+
+冷启动进入标题画面时没有背景音乐；点任意按钮（发生场景切换）后声音才出现。真机必现，重启应用后复现。
+
+### 根因
+
+标题曲在**页面尚未收到任何用户手势**时就调用了 `play()`，Chromium/ArkWeb 的自动播放策略使其 reject：
+
+```
+NotAllowedError: play() failed because the user didn't interact with the document first.
+The AudioContext was not allowed to start. It must be resumed (or created) after a user gesture.
+```
+
+`WebAudioAPIManager` 虽在首次输入时 `resume()` 了 AudioContext，但**没有任何代码重新发起被拒绝的 play()**；标题曲元素保持 `paused=true`，直到后续场景切换新建 player 才恢复。
+
+### ArkWeb 额外坑
+
+在**首个手势事件处理器内部**调用的 `AudioContext.resume()` 在 ArkWeb 上可能永远 pending（激活尚未作用到媒体管线）；同样的 `resume()` 延迟约 250ms 再调即可成功（实测 `resumeAttempts=2`）。
+
+### 修复
+
+1. `WebAudioAPIMusic.play()` 改走 `playNative()`：记录 `__spdWantPlay`；play() 被拒时在 document 的首次输入事件（与 manager 相同的事件集、bubble 阶段）重新尝试。
+2. 重试时先 `resume()` 共享 AudioContext，**等其 resolve 且 state=running 后再 play()**；resume 每 250ms 重试，最多 4 次（`setTimeout` 后用户激活仍有效）。
+3. `pause()`/`stop()` 清除 `__spdWantPlay`，避免把用户主动暂停的曲目在下次手势时"复活"。
+4. `WebAudioAPIManager` 新增覆盖层：把 AudioContext 暴露为 `window.__spdAudioContext`，供上述重试复用同一 context。
+
+补丁文件：
+
+- `html/patches/gdx-backend-gwt/com/badlogic/gdx/backends/gwt/webaudio/WebAudioAPIMusic.java`
+- `html/patches/gdx-backend-gwt/com/badlogic/gdx/backends/gwt/webaudio/WebAudioAPIManager.java`
+
+### 真机验证（HUAWEI Mate 60 Pro，USB `FMR0223825079089`）
+
+冷启动 → CDP 读取状态 → 系统级单击（`uitest uiInput click`）→ 再读取：
+
+| 阶段 | AudioContext | `__spdAudio` 关键字段 | 音乐元素 |
+|---|---|---|---|
+| 冷启动未触摸 | `suspended` | `blocked=1`, `retries=0`, `__spdRetryHooked=true` | `paused=true`, `currentTime=0` |
+| 单击后 3s | `running` | `retries=1`, `resumeAttempts=2`, `resumeOk=true`, `retryOk=true` | `paused=false`, `currentTime≈2.44s` |
+
+即：首次点击即可让标题音乐开始播放，不再需要等场景切换。
+
+### 调试入口
+
+页面内 `window.__spdAudio` 记录最近一次受自动播放限制的曲目：
+
+| 字段 | 含义 |
+|---|---|
+| `blocked` | 被 NotAllowedError 拒绝的 play() 次数 |
+| `retries` | 首次手势重试次数 |
+| `resumeAttempts` / `resumeOk` / `resumeError` | AudioContext.resume 尝试与结果 |
+| `retryOk` / `lastRetryError` | 重试 play() 是否成功 |
+| `stateBefore` / `stateAfter` | 重试前后的 context 状态 |
+| `lastMusic` | 最近一次受阻的 audio 元素（可读 `paused`/`currentTime`/`__spdWantPlay`） |
+
+## D-1d：进入主页立即播放（原生标题曲兜底，2026-11-09）
+
+### 需求
+
+冷启动进入标题画面**无需任何触摸**就要有音乐。
+
+### 约束
+
+ArkWeb 没有提供关闭"用户手势要求"的开关（`WebviewController` 无 `setMediaPlaybackRequiresUserGesture` 类接口；`mediaOptions` 只有 `resumeInterval`/`audioExclusive`/`audioSessionType`）。实测连 **muted autoplay 也会被拒绝**（`a.muted=true; a.play()` → `NotAllowedError`），因此纯 Web 侧无法在首次手势前出声。
+
+### 方案
+
+宿主 ArkTS 在标题场景就绪时用 **AVPlayer 原生播放**同一首标题曲（`theme_1`），WebView 能出声后立刻停掉原生播放器：
+
+| 阶段 | 行为 |
+|---|---|
+| 收到 `[SPD] game-ready` | 读取 SPD 音乐设置（localStorage `settings.xml:musicb` / `music_voli`），`music=true` 时启动原生 AVPlayer（`theme_1.ogg`，循环，`STREAM_USAGE_GAME`） |
+| WebView 首次成功出声 | `WebAudioAPIMusic.playNative()` 输出 `[SPD] music-started`，宿主 `onConsole` 调用 `TitleMusic.stop()` |
+| 页面隐藏 / 显示 | `onPageHide` 暂停、`onPageShow` 恢复原生播放器 |
+| 退出 / 页面销毁 | `stop()` 并 `release()` |
+
+实现位置：
+
+- `entry/src/main/ets/pages/Index.ets`：`TitleMusic` 类 + `startTitleMusic()` / `stopTitleMusic()` + `onConsole` 信号处理
+- `html/patches/.../webaudio/WebAudioAPIMusic.java`：`playNative()` 成功时输出 `[SPD] music-started`（每个元素只发一次）
+
+音量按 SPD 公式 `volInt²/100` 映射到 0–1；音乐关闭或音量为 0 时不启动原生播放。原生播放器只用于**冷启动标题**，进入关卡后由 WebView 自己播放，原生播放器保持停止（`titleMusicStopped`）。
+
+### 真机验证（HUAWEI Mate 60 Pro，USB `FMR0223825079089`）
+
+| 阶段 | `spdNative.spdTitleState()` | AudioContext | Web 音乐 |
+|---|---|---|---|
+| 冷启动 10s、未触摸 | `playing` | `suspended`（`blocked=1`） | `paused=true` |
+| 系统级单击后 3s | `none`（已释放） | `running` | `paused=false`, `currentTime≈2.6s` |
+
+即：标题画面出现即有原生音乐；首次触摸后无缝切换到 WebView 音乐并停止原生播放器。
+
+调试：页面内 `window.spdNative.spdTitleState()` 返回原生播放器状态（`none`/`idle`/`prepared`/`playing`/`paused`…）。
+
+## D-1e：音效（SFX）比安卓偏小/发闷 —— StereoPanner 中心等功率衰减（2026-11-09）
+
+### 症状
+
+对比安卓版，鸿蒙端**所有音效**（脚步、开门、受击…）明显偏小、发闷；音乐相对正常。用户最初报"英雄过木门时门的状态/动画不对"，实为开门音效偏小。
+
+### 根因
+
+libgdx `AudioControlGraph` 给每条声音建 `source → StereoPannerNode(pan=0) → GainNode → destination`。
+`StereoPannerNode` 在 pan=0 用**等功率声像**：单声道输入被写到左右声道各 `cos(π/4)=0.7071`（−3dB）。
+安卓 `SoundPool` 则是把单声道样本**满幅复制**到双声道。SPD 所有 `Sample.play` 的 pan = `rightVolume-leftVolume` 恒为 0，所以每条音效都被白白压低 3dB，而立体声音乐在 pan=0 下是直通（不受影响）——于是只有音效显得偏小、被音乐盖住而发闷。
+
+实测（`AudioContext` 内 0.25 幅度正弦，分析器取 RMS）：经 panner = 0.125、不经 = 0.1768（比值 0.7071，与频率无关，非低通）。
+
+### 修复
+
+1. **源级**：新增 `html/patches/gdx-backend-gwt/.../webaudio/AudioControlGraph.java`，`setupAudoGraph` 不再创建 panner（`panNode=null`），`setSource` 已有的 `panNode?→pan:→gain` 分支自然走 source 直连 gain（满幅，等同安卓）。
+2. **产物安全网**：`tools/patch-gwt-audio.js` —— 把编译产物 `setupAudoGraph`（`function cj(d){…if(a.createStereoPanner){…}…}`）的 `if(a.createStereoPanner){` 改成 `if(!1){`（幂等、备份到 `tools/backup`），`tools/sync-gwt.js` 同步后自动执行。
+
+### 真机验证（HUAWEI Mate 60 Pro，USB `FMR0223825079089`）
+
+CDP 在 `AudioContext` 实例上挂钩 `createStereoPanner` / `createBufferSource`，进游戏开木门：
+
+| 指标 | 修复前 | 修复后 |
+|---|---|---|
+| `createStereoPanner` 调用数 | 每条音效图 1 次 | **0** |
+| 开门瞬间音源 | 0.392s（door_open）+0.183s（step） | 同左（无回归） |
+| 单声道输出幅度 | 0.707× | **1.0×**（等同安卓） |
+
+门贴图/开门显示无回归。

@@ -211,8 +211,15 @@ public class GwtGL20 implements GL20 {
 		gl.bindAttribLocation(glProgram, index, name);
 	}
 
+	/** Last GL_ELEMENT_ARRAY_BUFFER bound through glBindBuffer, so the
+	 * client-side glDrawElements emulation below can restore it. */
+	private int boundElementBuffer = 0;
+
 	@Override
 	public void glBindBuffer (int target, int buffer) {
+		if (target == GL20.GL_ELEMENT_ARRAY_BUFFER) {
+			boundElementBuffer = buffer;
+		}
 		gl.bindBuffer(target, buffers.get(buffer));
 	}
 
@@ -468,9 +475,45 @@ public class GwtGL20 implements GL20 {
 		gl.drawArrays(mode, first, count);
 	}
 
+	/** scratch buffer used to emulate client-side index arrays (not supported by WebGL) */
+	private WebGLBuffer clientIndexVBO = null;
+
 	@Override
 	public void glDrawElements (int mode, int count, int type, Buffer indices) {
-		gl.drawElements(mode, count, type, indices.position()); // FIXME this is assuming WebGL supports client side buffers...
+		//SPD web port: WebGL has no client-side index arrays. libGDX's
+		//Mesh.VertexDataType.VertexArray calls this overload, so upload the
+		//slice to a scratch ELEMENT_ARRAY_BUFFER and draw from there. Without
+		//this every glDrawElements fails with "bound to target 0x8893: no
+		//buffer" (e.g. opening the item-note text field froze the game).
+		//Restore the previously bound element buffer so callers that manage
+		//their own index buffer (noosa's Quad.bindIndices) keep working.
+		if (clientIndexVBO == null) {
+			clientIndexVBO = gl.createBuffer();
+		}
+		gl.bindBuffer(WebGLRenderingContext.ELEMENT_ARRAY_BUFFER, clientIndexVBO);
+		if (indices instanceof ShortBuffer) {
+			ShortBuffer shortIndices = (ShortBuffer)indices;
+			int end = Math.min(shortIndices.limit(), shortIndices.position() + count);
+			gl.bufferData(WebGLRenderingContext.ELEMENT_ARRAY_BUFFER,
+				((Int16Array)((HasArrayBufferView)shortIndices).getTypedArray())
+					.subarray(shortIndices.position(), end), GL20.GL_DYNAMIC_DRAW);
+		} else if (indices instanceof ByteBuffer) {
+			ByteBuffer byteIndices = (ByteBuffer)indices;
+			int end = Math.min(byteIndices.limit(), byteIndices.position() + count);
+			gl.bufferData(WebGLRenderingContext.ELEMENT_ARRAY_BUFFER,
+				((Int8Array)((HasArrayBufferView)byteIndices).getTypedArray())
+					.subarray(byteIndices.position(), end), GL20.GL_DYNAMIC_DRAW);
+		} else if (indices instanceof IntBuffer) {
+			IntBuffer intIndices = (IntBuffer)indices;
+			int end = Math.min(intIndices.limit(), intIndices.position() + count);
+			gl.bufferData(WebGLRenderingContext.ELEMENT_ARRAY_BUFFER,
+				((Int32Array)((HasArrayBufferView)intIndices).getTypedArray())
+					.subarray(intIndices.position(), end), GL20.GL_DYNAMIC_DRAW);
+		} else {
+			throw new GdxRuntimeException("Unsupported buffer type for client-side index array: " + indices);
+		}
+		gl.drawElements(mode, count, type, 0);
+		gl.bindBuffer(WebGLRenderingContext.ELEMENT_ARRAY_BUFFER, buffers.get(boundElementBuffer));
 	}
 
 	@Override

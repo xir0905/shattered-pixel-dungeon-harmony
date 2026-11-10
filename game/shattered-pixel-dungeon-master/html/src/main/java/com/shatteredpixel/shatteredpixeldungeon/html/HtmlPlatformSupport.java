@@ -21,6 +21,9 @@
 
 package com.shatteredpixel.shatteredpixeldungeon.html;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
@@ -67,6 +70,175 @@ public class HtmlPlatformSupport extends PlatformSupport {
 	public void updateSystemUI() {
 		//nothing to do in the browser
 	}
+
+	// ---- Onscreen keyboard (soft keyboard support) ----------------------
+	//
+	// The stock GWT backend implements setOnscreenKeyboardVisible as a no-op,
+	// so scene2d's TextField (used by WndTextInput for item notes and other
+	// text prompts) had no way to receive typed text on a touch-only device.
+	// Focus a tiny transparent DOM input/textarea to raise the system IME and
+	// translate its input events back into libGDX key events. Characters go
+	// through keyTyped (the IME's composition text is committed on
+	// compositionend), Backspace through keyDown/keyTyped('\b'), and Enter
+	// through keyTyped('\r') for single-line fields or '\n' for multiline.
+
+	@Override
+	public void setOnscreenKeyboardVisible(boolean value, boolean multiline) {
+		if (value) {
+			showOnscreenKeyboardJsni(multiline);
+		} else {
+			hideOnscreenKeyboardJsni();
+		}
+	}
+
+	private static void onKeyboardText(String text) {
+		if (text == null || text.length() == 0) {
+			return;
+		}
+		InputProcessor processor = Gdx.input.getInputProcessor();
+		if (processor == null) {
+			return;
+		}
+		for (int i = 0; i < text.length(); i++) {
+			processor.keyTyped(text.charAt(i));
+		}
+	}
+
+	private static void onKeyboardBackspace() {
+		InputProcessor processor = Gdx.input.getInputProcessor();
+		if (processor != null) {
+			processor.keyDown(Input.Keys.BACKSPACE);
+			processor.keyTyped('\b');
+		}
+	}
+
+	private static void onKeyboardEnter() {
+		InputProcessor processor = Gdx.input.getInputProcessor();
+		if (processor != null) {
+			processor.keyTyped('\r');
+		}
+	}
+
+	private static native void showOnscreenKeyboardJsni(boolean multiline) /*-{
+		var doc = $doc, wnd = $wnd;
+		var prev = wnd.__spd_kb_input;
+		if (prev) {
+			try { prev.blur(); } catch (e) {}
+			if (prev.parentNode) prev.parentNode.removeChild(prev);
+		}
+		var el = doc.createElement(multiline ? 'textarea' : 'input');
+		if (!multiline) el.type = 'text';
+		el.setAttribute('autocomplete', 'off');
+		el.setAttribute('autocorrect', 'off');
+		el.setAttribute('autocapitalize', 'none');
+		el.setAttribute('spellcheck', 'false');
+		el.setAttribute('enterkeyhint', multiline ? 'enter' : 'done');
+		el.style.position = 'fixed';
+		el.style.left = '0px';
+		el.style.top = '0px';
+		el.style.width = '1px';
+		el.style.height = '1px';
+		el.style.opacity = '0.01';
+		el.style.fontSize = '16px';
+		el.style.color = 'transparent';
+		el.style.background = 'transparent';
+		el.style.border = '0';
+		el.style.padding = '0';
+		el.style.margin = '0';
+		el.style.zIndex = '2147483647';
+		el.style.pointerEvents = 'none';
+		doc.body.appendChild(el);
+		wnd.__spd_kb_input = el;
+		wnd.__spd_kb_multiline = multiline;
+
+		var flush = function() {
+			var v = el.value || '';
+			el.value = '';
+			if (v.length > 0) {
+				@com.shatteredpixel.shatteredpixeldungeon.html.HtmlPlatformSupport::onKeyboardText(Ljava/lang/String;)(v);
+			}
+		};
+		var backspace = function() {
+			el.value = '';
+			@com.shatteredpixel.shatteredpixeldungeon.html.HtmlPlatformSupport::onKeyboardBackspace()();
+		};
+		var enter = function() {
+			el.value = '';
+			if (wnd.__spd_kb_multiline) {
+				@com.shatteredpixel.shatteredpixeldungeon.html.HtmlPlatformSupport::onKeyboardText(Ljava/lang/String;)('\n');
+			} else {
+				@com.shatteredpixel.shatteredpixeldungeon.html.HtmlPlatformSupport::onKeyboardEnter()();
+			}
+		};
+
+		el.addEventListener('input', function(e) {
+			if (e && e.isComposing) return;
+			var t = (e && e.inputType) || '';
+			// Intermediate IME composition; the final text arrives on
+			// compositionend (or insertFromComposition).
+			if (t === 'insertCompositionText') return;
+			if (t.indexOf('delete') === 0) {
+				backspace();
+			} else {
+				flush();
+			}
+		}, false);
+		el.addEventListener('compositionend', function() {
+			flush();
+		}, false);
+		el.addEventListener('beforeinput', function(e) {
+			var t = (e && e.inputType) || '';
+			if (t === 'insertLineBreak' || t === 'insertParagraph') {
+				e.preventDefault();
+				enter();
+			}
+		}, false);
+		el.addEventListener('keypress', function(e) {
+			// Characters are delivered through the input event. Stop the
+			// browser keypress path so the game doesn't insert them twice.
+			e.stopPropagation();
+		}, false);
+		el.addEventListener('keydown', function(e) {
+			var k = e.key || '';
+			if (k === 'Backspace' || k === 'Delete') {
+				e.stopPropagation();
+				e.preventDefault();
+				backspace();
+			} else if (k === 'Enter') {
+				e.stopPropagation();
+				e.preventDefault();
+				enter();
+			} else if (k === 'Tab') {
+				e.stopPropagation();
+				e.preventDefault();
+			} else if (k.length === 1 || k === 'Unidentified' || e.keyCode === 229) {
+				// Printable key / soft-keyboard event: let the input element
+				// produce the input event, but keep the game from also seeing
+				// the key as a gameplay action while the field is focused.
+				e.stopPropagation();
+			}
+		}, false);
+		el.addEventListener('keyup', function(e) {
+			var k = e.key || '';
+			if (k !== 'ArrowLeft' && k !== 'ArrowRight' && k !== 'ArrowUp' && k !== 'ArrowDown' &&
+				k !== 'Home' && k !== 'End') {
+				e.stopPropagation();
+			}
+		}, false);
+
+		el.value = '';
+		try { el.focus(); } catch (e) {}
+	}-*/;
+
+	private static native void hideOnscreenKeyboardJsni() /*-{
+		var wnd = $wnd;
+		var el = wnd.__spd_kb_input;
+		if (el) {
+			try { el.blur(); } catch (e) {}
+			if (el.parentNode) el.parentNode.removeChild(el);
+		}
+		wnd.__spd_kb_input = null;
+	}-*/;
 
 	@Override
 	public boolean connectedToUnmeteredNetwork() {

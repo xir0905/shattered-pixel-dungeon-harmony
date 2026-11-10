@@ -418,6 +418,40 @@ public class ReflectionCacheSourceCreator {
 			// generated cache only needs Type info, constructor invokables and array
 			// ops. Dropping fields/methods shrinks each generated cache class far
 			// below the 65536 constant-pool limit (see GwtReflect chunking).
+			//
+			// Exception: WndTextInput creates a scene2d Skin, whose JSON is applied
+			// via generic reflection. Without field metadata the first book-icon tap
+			// throws "Field not found: selection (TextFieldStyle)" and the game loop
+			// dies. Emit fields for TextFieldStyle only; doing it for every type
+			// reintroduces the constant-pool overflow.
+			if ("com.badlogic.gdx.scenes.scene2d.ui.TextField.TextFieldStyle".equals(name)) {
+				pb(varName + ".fields = new Field[] {");
+				for (JField f : c.getFields()) {
+					String enclosingType = getType(c);
+					String fieldType = getType(f.getType());
+					int setterGetter = nextSetterGetterId++;
+					String elementType = getElementTypes(f);
+					String annotations = getAnnotations(f.getDeclaredAnnotations());
+
+					pb("    new Field(\"" + f.getName() + "\", " + enclosingType + ", " + fieldType + ", " + f.isFinal() + ", "
+						+ f.isDefaultAccess() + ", " + f.isPrivate() + ", " + f.isProtected() + ", " + f.isPublic() + ", "
+						+ f.isStatic() + ", " + f.isTransient() + ", " + f.isVolatile() + ", " + setterGetter + ", " + setterGetter
+						+ ", " + elementType + ", " + annotations + "), ");
+
+					SetterGetterStub stub = new SetterGetterStub();
+					stub.name = f.getName();
+					stub.enclosingType = enclosingType;
+					stub.type = fieldType;
+					stub.isStatic = f.isStatic();
+					stub.isFinal = f.isFinal();
+					if (enclosingType != null && fieldType != null) {
+						stub.getter = setterGetter;
+						stub.setter = setterGetter;
+					}
+					setterGetterStubs.add(stub);
+				}
+				pb("};");
+			}
 
 			if (c.isPublic() && !c.isAbstract() && (c.getEnclosingType() == null || c.isStatic())) {
 				createTypeInvokables(c, varName, "Constructor", c.getConstructors());

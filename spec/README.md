@@ -127,7 +127,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 - **App 进程会被系统回收**（开发期间多次观察到 pid 消失）——重启后要重新 fport + 刷新 real_ws.txt。
 - **CDP 注入输入已可用**（2026-11-08 修复；坐标说明经 D-7 更新）：触摸必须用 **CSS 像素**。当前架构（D-7）：沉浸式全屏 + 顶部 avoidArea 安全区黑边（本机 36vp=117px，随机型/刘海变化），因此 `CSS_y=(物理y−顶部安全区px)/3.25`、`CSS_x=物理x/3.25`；安全区高度可用 `innerHeight` 反推（本机 CSS 388×801 / canvas 1261×2603）。事件对为 `Input.dispatchTouchEvent` touchStart（含 x/y/radiusX/radiusY/force）→ 延时 → touchEnd；长按需 ≥700ms。真机导航/长按已验证（D-5/D-6/D-7）。
 - GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，无法页面内直接调 `String.format` 验证。
-- 音频 `NotAllowedError`（autoplay 限制）为良性，首次触摸后解锁。
+- 音频 `NotAllowedError`：ArkWeb 自动播放策略，触摸前 WebView 无法出声（连 muted autoplay 也被拒绝）。冷启动标题曲已由宿主 AVPlayer 原生兜底，见 `audio-loop-arkweb.md` D-1c/D-1d；首次触摸后 WebView 接管并停止原生播放。
 
 ## 6. 关键数字
 

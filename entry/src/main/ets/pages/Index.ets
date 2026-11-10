@@ -17,8 +17,12 @@ import { webview } from '@kit.ArkWeb';
 import { common } from '@kit.AbilityKit';
 import { fileIo as fs, picker } from '@kit.CoreFileKit';
 import { util } from '@kit.ArkTS';
-import { window } from '@kit.ArkUI';
+import { window, KeyboardAvoidMode } from '@kit.ArkUI';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { media } from '@kit.MediaKit';
+import { audio } from '@kit.AudioKit';
+import { resourceManager } from '@kit.LocalizationKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 
 const BASE_URL: string = 'http://spd.local/';
 
@@ -78,6 +82,11 @@ function pad2(n: number): string {
   return n < 10 ? '0' + n : '' + n;
 }
 
+/** Title-theme diagnostics; hilog is visible in `hdc shell hilog`. */
+function audioLog(text: string): void {
+  hilog.info(0x0000, 'SPDAudio', '%{public}s', text);
+}
+
 /** One key/value pair inside a save-backup file (D-8). */
 class SpdEntry {
   key: string = '';
@@ -109,6 +118,12 @@ class SpdDump {
  */
 class SpdNativeStore {
   private dirPath: string = '';
+  /** Debug/status access to the native title-theme fallback. */
+  titleMusic: TitleMusic | null = null;
+
+  spdTitleState(): string {
+    return this.titleMusic === null ? 'none' : this.titleMusic.getState();
+  }
 
   /** Resolve the sandbox directory once; called from aboutToAppear so the
    * context is ready before the Web component captures this object. */
@@ -257,6 +272,134 @@ class SpdNativeStore {
   }
 }
 
+/**
+ * Chromium-based WebViews reject the game's first music.play() until the page
+ * has received a user gesture (NotAllowedError), so the title theme would be
+ * silent until the first touch. The host therefore plays the same title track
+ * natively as soon as the title scene is ready; WebAudioAPIMusic signals
+ * "[SPD] music-started" once the WebView can play for real, and that message
+ * stops this fallback player (Index.onConsole).
+ */
+const TITLE_MUSIC_RAW: string = 'web/assets/music/theme_1-44a7055bcd59c50fea6554d9c690b295.ogg';
+
+class TitleMusic {
+  private player: media.AVPlayer | null = null;
+  private volume: number = 1;
+  private wantPlay: boolean = false;
+
+  getState(): string {
+    return this.player === null ? 'none' : this.player.state;
+  }
+
+  start(ctx: common.UIAbilityContext, volume: number): void {
+    if (this.player !== null) {
+      return;
+    }
+    this.volume = volume;
+    this.wantPlay = true;
+    this.create(ctx);
+  }
+
+  private async create(ctx: common.UIAbilityContext): Promise<void> {
+    try {
+      const player: media.AVPlayer = await media.createAVPlayer();
+      this.player = player;
+      player.on('stateChange', (state: media.AVPlayerState) => {
+        this.onState(player, state);
+      });
+      player.on('error', (err: BusinessError) => {
+        audioLog(`error: ${err.code} ${err.message}`);
+      });
+      const desc: resourceManager.RawFileDescriptor =
+        await ctx.resourceManager.getRawFd(TITLE_MUSIC_RAW);
+      player.fdSrc = desc;
+    } catch (err) {
+      audioLog(`create failed: ${err}`);
+      this.player = null;
+    }
+  }
+
+  private onState(player: media.AVPlayer, state: media.AVPlayerState): void {
+    if (this.player !== player) {
+      return;
+    }
+    audioLog(`state: ${state}`);
+    if (state === 'initialized') {
+      const info: audio.AudioRendererInfo = {
+        usage: audio.StreamUsage.STREAM_USAGE_GAME,
+        rendererFlags: 0
+      };
+      player.audioRendererInfo = info;
+      player.loop = true;
+      try {
+        player.setVolume(this.volume);
+      } catch (err) {
+        audioLog(`setVolume failed: ${err}`);
+      }
+      player.prepare().then(() => {}).catch((err: BusinessError) => {
+        audioLog(`prepare failed: ${err.message}`);
+      });
+    } else if (state === 'prepared' || state === 'completed') {
+      this.play(player);
+    }
+  }
+
+  private play(player: media.AVPlayer): void {
+    if (!this.wantPlay) {
+      return;
+    }
+    player.play().then(() => {
+      audioLog('playing');
+    }).catch((err: BusinessError) => {
+      audioLog(`play failed: ${err.message}`);
+    });
+  }
+
+  pause(): void {
+    const player: media.AVPlayer | null = this.player;
+    if (player === null || player.state !== 'playing') {
+      return;
+    }
+    player.pause().then(() => {}).catch((err: BusinessError) => {
+      audioLog(`pause failed: ${err.message}`);
+    });
+  }
+
+  resume(): void {
+    const player: media.AVPlayer | null = this.player;
+    if (player === null || !this.wantPlay || player.state !== 'paused') {
+      return;
+    }
+    this.play(player);
+  }
+
+  stop(): void {
+    this.wantPlay = false;
+    const player: media.AVPlayer | null = this.player;
+    this.player = null;
+    if (player !== null) {
+      audioLog('stop');
+      this.release(player);
+    }
+  }
+
+  private async release(player: media.AVPlayer): Promise<void> {
+    try {
+      const st: media.AVPlayerState = player.state;
+      if (st !== 'idle' && st !== 'released' && st !== 'error') {
+        await player.stop();
+      }
+    } catch (err) {
+      audioLog(`stop failed: ${err}`);
+    }
+    try {
+      await player.release();
+    } catch (err) {
+      audioLog(`release failed: ${err}`);
+    }
+  }
+}
+
 @Entry
 @Component
 struct Index {
@@ -271,6 +414,12 @@ struct Index {
   // from the game are synchronous bridge calls — see SpdNativeStore above.
   private spdStore: SpdNativeStore = new SpdNativeStore();
 
+  // Native title-theme fallback (see TitleMusic above). Started when the game
+  // signals game-ready; stopped for good once the WebView can play music.
+  private titleMusic: TitleMusic = new TitleMusic();
+  private titleMusicStopped: boolean = false;
+  private titleMusicStarting: boolean = false;
+
   // Top safe-area inset (vp) reserved above the WebView so the game's own UI
   // (HP bar / depth / prompt) never sits under the camera cutout, notch or
   // status-bar region. Resolved from the system's avoid areas instead of a
@@ -282,16 +431,99 @@ struct Index {
   aboutToAppear(): void {
     webview.WebviewController.setWebDebuggingAccess(true);
     this.spdStore.attach(getContext(this) as common.UIAbilityContext);
+    this.spdStore.titleMusic = this.titleMusic;
     this.initSafeInsets();
     setTimeout(() => {
       this.gameReady = true;
     }, 20000);
   }
 
+  onPageShow(): void {
+    if (!this.titleMusicStopped) {
+      this.titleMusic.resume();
+    }
+  }
+
+  onPageHide(): void {
+    this.titleMusic.pause();
+  }
+
+  aboutToDisappear(): void {
+    this.titleMusicStopped = true;
+    this.titleMusic.stop();
+  }
+
+  /**
+   * Starts the native title theme fallback. The game's music setting lives in
+   * GWT Preferences (localStorage keys "settings.xml:musicb" / "music_voli"),
+   * so the current value is queried before playing; absent keys mean the SPD
+   * defaults (music on, volume 10/10).
+   */
+  private startTitleMusic(): void {
+    if (this.titleMusicStopped || this.titleMusicStarting) {
+      return;
+    }
+    this.titleMusicStarting = true;
+    const script: string =
+      "(function(){try{" +
+      "var m=localStorage.getItem('settings.xml:musicb');" +
+      "var v=localStorage.getItem('settings.xml:music_voli');" +
+      "return (m===null?'true':m)+'|'+(v===null?'10':v);" +
+      "}catch(e){return 'true|10';}})()";
+    this.controller.runJavaScript(script).then((result: string) => {
+      this.titleMusicStarting = false;
+      let enabled: boolean = true;
+      let volInt: number = 10;
+      if (result !== null && result !== undefined) {
+        const parts: string[] = result.split('|');
+        if (parts.length === 2) {
+          enabled = parts[0] !== 'false';
+          const parsed: number = Number(parts[1]);
+          if (parsed >= 0 && parsed <= 10) {
+            volInt = parsed;
+          }
+        }
+      }
+      audioLog(`settings enabled=${enabled} vol=${volInt}`);
+      if (!enabled || this.titleMusicStopped) {
+        return;
+      }
+      let volume: number = volInt * volInt / 100;
+      if (volume < 0) {
+        volume = 0;
+      }
+      if (volume > 1) {
+        volume = 1;
+      }
+      this.titleMusic.start(getContext(this) as common.UIAbilityContext, volume);
+    }).catch((err: BusinessError) => {
+      this.titleMusicStarting = false;
+      audioLog(`settings query failed: ${err.message}`);
+    });
+  }
+
+  private stopTitleMusic(): void {
+    if (this.titleMusicStopped) {
+      return;
+    }
+    this.titleMusicStopped = true;
+    this.titleMusic.stop();
+  }
+
   private initSafeInsets(): void {
     window.getLastWindow(getContext(this)).then((win: window.Window) => {
       this.mainWin = win;
       this.refreshInsets(win);
+      try {
+        // The GWT text-input bridge raises a hidden DOM input for the soft
+        // keyboard. Keep the window from resizing when the IME appears:
+        // a WebView resize would make the game re-layout and drop the note
+        // window. The keyboard overlays the bottom; WndTextInput already
+        // shifts itself up for the soft keyboard.
+        win.getUIContext().setKeyboardAvoidMode(KeyboardAvoidMode.NONE);
+      } catch (e) {
+        console.error(`[SPD] setKeyboardAvoidMode failed: ${e}`);
+      }
       try {
         win.on('avoidAreaChange', (data: window.AvoidAreaOptions) => {
           this.refreshInsets(win);
@@ -503,7 +735,7 @@ struct Index {
         .javaScriptProxy({
           object: this.spdStore,
           name: 'spdNative',
-          methodList: ['spdPut', 'spdGet', 'spdExists', 'spdDel', 'spdKeys'],
+          methodList: ['spdPut', 'spdGet', 'spdExists', 'spdDel', 'spdKeys', 'spdTitleState'],
           controller: this.controller
         })
         .fileAccess(true)
@@ -511,7 +743,7 @@ struct Index {
         .horizontalScrollBarAccess(false)
         .verticalScrollBarAccess(false)
         .overScrollMode(OverScrollMode.NEVER)
-        .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
+        .expandSafeArea([SafeAreaType.SYSTEM, SafeAreaType.KEYBOARD], [SafeAreaEdge.BOTTOM])
         .onInterceptRequest((event) => {
           if (!event) {
             return this.notFound();
@@ -544,10 +776,17 @@ struct Index {
             const msg: string = event.message.getMessage();
             if (msg.indexOf('[SPD] game-ready') !== -1) {
               this.gameReady = true;
+              this.startTitleMusic();
+            }
+            if (msg.indexOf('[SPD] music-started') !== -1) {
+              // The WebView is now allowed to play audio; drop the native
+              // title-theme fallback so the two never overlap for long.
+              this.stopTitleMusic();
             }
             if (msg.indexOf('[SPD] exit-requested') !== -1) {
               // The game asked to quit (Scene.onBackPressed with no override,
               // e.g. back on the title screen). Finish the ability.
+              this.stopTitleMusic();
               try {
                 (getContext(this) as common.UIAbilityContext).terminateSelf();
               } catch (e) {
@@ -561,6 +800,7 @@ struct Index {
       }
       .width('100%')
       .height('100%')
+      .expandSafeArea([SafeAreaType.KEYBOARD])
 
       if (!this.gameReady) {
         Column({ space: 12 }) {
@@ -643,3 +883,4 @@ struct Index {
     .backgroundColor(Color.Black)
   }
 }
+

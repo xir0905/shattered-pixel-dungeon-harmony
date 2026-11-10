@@ -25,6 +25,15 @@
  * playTracks(SEWER_TRACK_LIST, ...)) dies permanently at the end of the first
  * track. Fix: wrap the callback in a closure that invokes it on the instance.
  *
+ * AUTOPLAY BUG (all Chromium-based WebViews): the very first
+ * music.play() happens while the page has not seen a user gesture yet, so the
+ * element rejects with NotAllowedError. WebAudioAPIManager resumes the
+ * AudioContext on the first input event, but nothing re-issues the rejected
+ * play(), so the title theme stays silent until the game happens to start
+ * another track (e.g. after entering a level). We remember the play intent on
+ * the element and retry once on the first user input; pause()/stop() clear the
+ * intent so a deliberately paused track is never resurrected.
+ *
  * SECONDARY (defensive, ArkWeb-specific): SPD also uses single-track looping
  * (Music.play(track, true), onCompletionListener == null, e.g. SEWERS_TENSE /
  * THEME_FINALE) which relies on the native 'loop' attribute. If ArkWeb drops
@@ -98,11 +107,132 @@ public class WebAudioAPIMusic implements Music {
 
 	@Override
 	public void play () {
-		audio.play();
+		playNative(audio.getAudioElement());
 	}
+
+	/**
+	 * Starts playback and, if the browser blocks it because the page has not
+	 * received a user gesture yet (NotAllowedError on the first cold-start
+	 * track), retries once on the first user input after the AudioContext has
+	 * been unlocked by WebAudioAPIManager. Without this the title theme stays
+	 * silent until some later scene change happens to call play() again.
+	 */
+	private static native void playNative (JavaScriptObject audioElement) /*-{
+		var dbg = $wnd.__spdAudio || ($wnd.__spdAudio = { blocked: 0, retries: 0, lastError: null, lastRetryError: null, retryOk: null, stateBefore: null, stateAfter: null });
+		dbg.lastMusic = audioElement;
+		audioElement.__spdWantPlay = true;
+		// Tell the HarmonyOS host that the WebView now has audible music, so
+		// it can stop the native title-theme fallback (see Index.ets).
+		var signalStarted = function () {
+			if (audioElement.__spdSignaled === true) return;
+			audioElement.__spdSignaled = true;
+			if ($wnd.console && $wnd.console.log) {
+				$wnd.console.log('[SPD] music-started');
+			}
+		};
+		var p = audioElement.play();
+		if (!p || !p['catch']) return;
+		if (p['then']) p['then'](signalStarted);
+		p['catch'](function (e) {
+			dbg.blocked++;
+			dbg.lastError = (e && e.name) || 'reject';
+			// Only arm the retry once per element, and only if playback is
+			// still wanted (pause()/stop() clear the flag).
+			if (audioElement.__spdWantPlay !== true || audioElement.__spdRetryHooked === true) {
+				dbg.armSkipped = 'want=' + audioElement.__spdWantPlay + ' hooked=' + audioElement.__spdRetryHooked;
+				return;
+			}
+			// Same event set as WebAudioAPIManager.hookUpSoundUnlockers, so the
+			// manager's (earlier registered) listener resumes the AudioContext
+			// before our retry runs. Bubble phase, not capture, preserves that
+			// registration order.
+			var eventNames = [
+				'click', 'contextmenu', 'auxclick', 'dblclick', 'mousedown',
+				'mouseup', 'pointerup', 'touchend', 'keydown', 'keyup', 'touchstart'
+			];
+			var onFirst = function () {
+				eventNames.forEach(function (name) {
+					$doc.removeEventListener(name, onFirst);
+				});
+				audioElement.__spdRetryHooked = false;
+				dbg.retries++;
+				dbg.stateBefore = $wnd.__spdAudioContext ? $wnd.__spdAudioContext.state : 'none';
+				if (audioElement.__spdWantPlay !== true || !audioElement.paused) {
+					dbg.retrySkipped = 'want=' + audioElement.__spdWantPlay + ' paused=' + audioElement.paused;
+					return;
+				}
+				// Resume the shared WebAudio graph inside the same user-gesture
+				// task (window.__spdAudioContext is exposed by the patched
+				// WebAudioAPIManager). Deferring with setTimeout() loses the
+				// transient activation on ArkWeb and play() rejects again.
+				if ($wnd.__spdAudioContext && $wnd.__spdAudioContext.state !== 'running') {
+					try { $wnd.__spdAudioContext.resume(); } catch (e) {}
+				}
+				var done = false;
+				var doRetry = function () {
+					if (done) return;
+					done = true;
+					dbg.stateAfter = $wnd.__spdAudioContext ? $wnd.__spdAudioContext.state : 'none';
+					var retry = audioElement.play();
+					if (retry && retry['then']) {
+						retry['then'](function () {
+							dbg.retryOk = true;
+							signalStarted();
+						}, function (e2) {
+							dbg.retryOk = false;
+							dbg.lastRetryError = (e2 && e2.name) || 'reject';
+						});
+					}
+				};
+				// ArkWeb quirk: resume() called directly inside the very first
+				// gesture handler can leave its promise pending forever (the
+				// activation is not applied to the media pipeline yet), while a
+				// resume() issued slightly later succeeds. Retry a few times;
+				// play() only once the context actually reports 'running'.
+				var attemptResume = function (n) {
+					if (done) return;
+					var ctx = $wnd.__spdAudioContext;
+					if (!ctx || ctx.state === 'running') {
+						doRetry();
+						return;
+					}
+					dbg.resumeAttempts = n;
+					try {
+						var rp = ctx.resume();
+						if (rp && rp['then']) {
+							rp['then'](function () {
+								dbg.resumeOk = true;
+								doRetry();
+							}, function (e3) {
+								dbg.resumeError = (e3 && e3.name) || 'reject';
+							});
+						} else {
+							doRetry();
+							return;
+						}
+					} catch (e4) {
+						dbg.resumeError = 'throw:' + (e4 && e4.name);
+					}
+					if (n < 4) {
+						$wnd.setTimeout(function () { attemptResume(n + 1); }, 250);
+					}
+				};
+				attemptResume(1);
+			};
+			audioElement.__spdRetryHooked = true;
+			eventNames.forEach(function (name) {
+				$doc.addEventListener(name, onFirst);
+			});
+		});
+	}-*/;
+
+	private static native void clearPlayIntent (JavaScriptObject audioElement) /*-{
+		audioElement.__spdWantPlay = false;
+	}-*/;
 
 	@Override
 	public void pause () {
+		clearPlayIntent(audio.getAudioElement());
 		audio.pause();
 	}
 

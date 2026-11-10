@@ -53,3 +53,8 @@ const patch = require('./patch-gwt-gl.js');
 const ok = patch.applyPatch();
 console.log(ok ? 'patch check: OK' : 'patch check: MANUAL REVIEW NEEDED (pattern absent)');
 if (!ok) process.exit(1);
+
+// SFX volume: drop the StereoPannerNode so mono effects keep full amplitude
+// (matches Android; see patch-gwt-audio.js). Idempotent.
+const audioPatch = require('./patch-gwt-audio.js');
+audioPatch.applyPatch();
