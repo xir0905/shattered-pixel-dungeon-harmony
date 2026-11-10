@@ -287,7 +287,7 @@ PrintWriter/StringWriter）、`java.lang`（ClassLoader/Package/Runtime）、`ja
 
 ```
 tools/
-├── build-all.ps1        ← 一键全链路：GWT → sync → HAP → install → start
+├── build-all.ps1        ← 一键全链路：GWT → sync → emu 回归 → HAP → install → start（构建溯源写 spec/build-log.md）
 ├── sync-gwt.js          ← GWT dist → rawfile 镜像同步 + 陈旧文件清理 + GL 补丁
 ├── patch-gwt-gl.js      ← 产物级 glBufferSubData 补丁（幂等安全网）
 ├── measure-startup.ps1  ← 冷启动耗时测量（截图轮询 + 像素分类）
@@ -307,7 +307,7 @@ tools/
 | `-Device <serial>` | 目标设备序列号（默认 `FMR0223825079089`） |
 | `-HdcPath <path>` | hdc 路径（默认 `E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe`） |
 
-流程：`gradlew :html:gwtCompile` → `node tools/sync-gwt.js` → `devecocli build`
+流程：`gradlew :html:gwtCompile` → `node tools/sync-gwt.js` → `node tools/devtools/emu_regression.js` → `devecocli build`
 → `hdc install -r` → `aa start -b com.example.shatteredpixeldungeon -a EntryAbility`。
 
 ### 4.2 `sync-gwt.js`
@@ -341,7 +341,7 @@ tools/
 | 输入/流程 | `spd_key_inject.js`、`hap_cdp_touchflow.js`、`input_diag.js` | 按键注入、触摸流程、事件诊断 |
 | 像素/截图 | `png_ascii.js`、`rowprofile.js`、`scanline.js`、`analyze_frame.ps1` | PNG 转 ASCII、逐行/逐列分析 |
 | 二进制/产物 | `findimpl.js`、`bindump.js`、`parampatch.js`、`zipcarve.js` | 在 cache.js/镜像中定位与打补丁 |
-| 算法回归 | `fmt_test.js`（21 用例）、`fmt_live_test.js` | `String.format` emu 回归 |
+| 算法回归 | `emu_regression.js`（134 断言）、`fmt_test.js`（21 例基线）、`fmt_live_test.js` | String.format / subarray / getDensity / 坐标换算 emu 回归 |
 
 **CDP 前置**（所有 CDP 脚本通用）：
 

@@ -45,5 +45,5 @@
    - `GwtGL20.java`：4 个 `copy()` 的 `subarray(buffer.position(), buffer.limit())`；
    - `GwtGraphics.java`：`getDensity()` override 整段；
    - 其余兼容层文件：按 diff 逐个判断是否仍需要/仍适用。
-3. 重编译后跑回归：`tools/devtools/fmt_test.js`（21 用例）+ 真机三项验证（门/格式/锐度，见 `spec/update-procedure.md`）。
-4. 上游版本重放完成后，在 `spec/build-log.md`（future-work F-5）记录新 permutation 哈希。
+3. 重编译后跑回归：`tools/devtools/emu_regression.js`（134 断言：format/subarray/getDensity/坐标）+ 真机四项验证（emu 套件/门/格式/锐度，见 `spec/update-procedure.md`）。
+4. 上游版本重放完成后，确认 `spec/build-log.md`（future-work F-4）已记录新 permutation + HAP SHA256（`build-all.ps1` 自动追加）。

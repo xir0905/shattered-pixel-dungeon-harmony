@@ -48,6 +48,7 @@ ShatteredPixelDungeon/                  ← HAP 工程根（git 仓库根）
     ├── README.md                       ← 本文
     ├── future-work.md                  ← 后续工作清单（A-G 组，含已完成项索引）
     ├── update-procedure.md             ← 上游版本升级 7 步手册
+    ├── build-log.md                    ← 每次构建的 permutation / HAP SHA256 溯源日志
     ├── door-bug-rootcause.md           ← 门状态不更新 bug（已修复）
     ├── text-format-bug.md              ← "1D级女猎手S" 格式串 bug（已修复）
     ├── rendering-sharpness.md          ← 像素字体糊字修复
@@ -86,15 +87,20 @@ cd game\shattered-pixel-dungeon-master
 cd ..\..
 node tools\sync-gwt.js
 
-# ③ 构建 HAP（~35s）
+# ③ GWT emu 回归（134 断言；build-all.ps1 会自动执行）
+node tools\devtools\emu_regression.js
+
+# ④ 构建 HAP（~35s）
 devecocli build --product default --build-mode debug
 
-# ④ 安装（覆盖安装，localStorage 存档保留）
+# ⑤ 安装（覆盖安装，localStorage 存档保留）
 & "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe" -t FMR0223825079089 install -r entry\build\default\outputs\default\entry-default-signed.hap
 
-# ⑤ 启动
+# ⑥ 启动
 & "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe" -t FMR0223825079089 shell aa start -b com.example.shatteredpixeldungeon -a EntryAbility
 ```
+
+一键脚本 `tools/build-all.ps1` 已串联 ①-⑥，并把每次构建的 permutation/HAP SHA256 追加到 `spec/build-log.md`。
 
 注意：
 - **GWT 重编译后必须跑 `tools/sync-gwt.js` 再 `devecocli build`**，否则 rawfile 里还是旧产物。
@@ -125,7 +131,7 @@ node tools\devtools\hap_cdp_eval.js   # 页面内求值
 
 已知限制与坑：
 - **App 进程会被系统回收**（开发期间多次观察到 pid 消失）——重启后要重新 fport + 刷新 real_ws.txt。
-- **CDP 注入输入已可用**（2026-11-08 修复；坐标说明经 D-7 更新）：触摸必须用 **CSS 像素**。当前架构（D-7）：沉浸式全屏 + 顶部 avoidArea 安全区黑边（本机 36vp=117px，随机型/刘海变化），因此 `CSS_y=(物理y−顶部安全区px)/3.25`、`CSS_x=物理x/3.25`；安全区高度可用 `innerHeight` 反推（本机 CSS 388×801 / canvas 1261×2603）。事件对为 `Input.dispatchTouchEvent` touchStart（含 x/y/radiusX/radiusY/force）→ 延时 → touchEnd；长按需 ≥700ms。真机导航/长按已验证（D-5/D-6/D-7）。
+- **CDP 注入输入已可用**（2026-11-08 修复；坐标说明经 D-7 更新）：触摸必须用 **CSS 像素**。当前架构（D-7）：沉浸式全屏 + 顶部 avoidArea 安全区黑边（本机 36vp=117px，随机型/刘海变化），因此 `CSS_y=(物理y−顶部安全区px)/3.25`、`CSS_x=物理x/3.25`；安全区高度可用 `innerHeight` 反推（本机 CSS 388×801 / canvas 1261×2603）。事件对为 `Input.dispatchTouchEvent` touchStart（含 x/y/radiusX/radiusY/force）→ 延时 → touchEnd；长按需 ≥500ms（实测 1s 按住稳定触发 tooltip + 振动）。真机导航/长按已验证（D-5/D-6/D-7）。
 - GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，无法页面内直接调 `String.format` 验证。
 - 音频 `NotAllowedError`：ArkWeb 自动播放策略，触摸前 WebView 无法出声（连 muted autoplay 也被拒绝）。冷启动标题曲已由宿主 AVPlayer 原生兜底，见 `audio-loop-arkweb.md` D-1c/D-1d；首次触摸后 WebView 接管并停止原生播放。
 

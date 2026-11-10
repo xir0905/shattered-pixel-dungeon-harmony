@@ -6,19 +6,52 @@
 
 ## 前置：建立 CDP 连接（所有 hap_cdp_* / spd_cdp_* 的公共前置）
 
+完整链路：**启动 app → 取 pid → 重建 fport → 取 ws URL → 写 real_ws.txt → dump/tap/eval**。
+
 ```powershell
 $hdc = "E:\DevEco Studio\sdk\default\openharmony\toolchains\hdc.exe"
-& $hdc -t FMR0223825079089 shell "pidof com.example.shatteredpixeldungeon"   # 无输出则先 aa start
-& $hdc -t FMR0223825079089 fport rm tcp:9224 localabstract:webview_devtools_remote_<旧pid>
-& $hdc -t FMR0223825079089 fport tcp:9224 localabstract:webview_devtools_remote_<新pid>
+$dev = "FMR0223825079089"
+
+# 0) app 未运行则先启动（WebView 起来后才有 devtools socket）
+& $hdc -t $dev shell aa start -b com.example.shatteredpixeldungeon -a EntryAbility
+
+# 1) 取 pid（每次 app 重启都会变）
+& $hdc -t $dev shell "pidof com.example.shatteredpixeldungeon"
+
+# 2) 重建 fport：先删旧规则（<旧pid> 用上一次的值），再按新 pid 建
+& $hdc -t $dev fport rm tcp:9224 localabstract:webview_devtools_remote_<旧pid>
+& $hdc -t $dev fport tcp:9224 localabstract:webview_devtools_remote_<新pid>
+
+# 3) 取 webSocketDebuggerUrl（只取一行 URL，不写整个 JSON）
 (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:9224/json).Content
-# 取 [0].webSocketDebuggerUrl，写入 %TEMP%\deveco\real_ws.txt
+
+# 4) 写入 real_ws.txt（只写 ws URL 本身，一行）
+New-Item -ItemType Directory -Path "$env:TEMP\deveco" -Force | Out-Null
+# 例：Set-Content "$env:TEMP\deveco\real_ws.txt" 'ws://127.0.0.1:9224/devtools/page/XXX'
 ```
+
+验证连接：`node hap_cdp_dump.js out.png`（出图即通）或 `node hap_cdp_eval.js "1+1"`（返回 2）。
 
 **坑（重要）**：
 - `real_ws.txt` **只写 ws URL 本身**（一行），不能写整个 JSON——脚本逐行读它当 URL。
 - App 进程会被系统回收；每次 app 重启后 pid 变化，**fport 规则要随 pid 重建**、real_ws.txt 要刷新。
 - 脚本读的是 `process.env.TEMP + '\deveco\real_ws.txt'`——从本目录跑也依然读 Temp 下那份。
+
+## CDP 触摸注入配方（F-2 已验证，2026-11-08）
+
+`Input.dispatchTouchEvent` 能驱动游戏，但**坐标必须是 CSS 像素**：
+
+```
+cssX = 物理 x ÷ (物理屏宽 / window.innerWidth)       # 真机 1260/388，dpr 3.25 ≈ ×0.308
+cssY = 物理 y ÷ (物理屏高 / window.innerHeight)      # 有安全区时先减黑边再除
+```
+
+- 直接传物理坐标会整体放大 3.25 倍、落到画布外（游戏无响应）；页面 canvas 的
+  backing 是物理像素，但事件系统按 CSS 坐标解释。
+- 事件对：`touchStart`（`touchPoints` 含 `x/y/radiusX/radiusY/force`）→ 延时 → `touchEnd`（`touchPoints: []`）。
+- 点击延时 ~120ms；长按按住 ≥500ms 可触发游戏 `onLongClick`（实测 1s 按住 → tooltip + 振动链全通）。
+- 备选通道：`hdc shell uitest uiInput click <物理x> <物理y>` / `uitest uiInput swipe ...`（系统级注入，物理坐标）。
+- 坐标换算自检：`node hap_cdp_geom.js`（viewport / canvas / dpr 一次打全）。
 
 ## 工具分类
 
@@ -82,16 +115,22 @@ console/exception 监听、CPU profile、渲染状态、GPU 信息、音频格�
 
 | 脚本 | 用途 |
 |---|---|
-| `fmt_test.js` | **emu String.format 修复的 Node 移植回归**（21 用例：`%1$d`、乱序、`%.0f`、`%05d`、`%-6s`、`%.2f` 等）。GWT emu 改动后先跑它 |
+| `emu_regression.js` | **GWT emu 全量回归套件**（F-1，134 断言）：String.format 全转换/位置参数/宽度精度/边界、NIO `subarray(position, limit)` 门 bug 语义、`getDensity` + 默认 zoom、`getRelativeX/Y` 与 CDP CSS 坐标换算。**GWT 重编译 / gdx 升级 / patches 重放后必跑**：`node tools/devtools/emu_regression.js`，退出码非 0 即失败 |
+| `fmt_test.js` | 早期 String.format 最小回归（21 用例，保留作历史基线；`emu_regression.js` 已包含并扩展） |
 | `fmt_live_test.js` | 在真机页面内实测 emu format（需 CDP 连接） |
 
 ## 已知限制（备忘）
 
-- **CDP 注入的触摸/鼠标事件不驱动游戏导航**：事件到达页面并命中 canvas
-  （touchstart/mouseDown 计数已验证），游戏不响应；真实触摸正常。见 `spec/future-work.md` F-2。
-  **绕过方案**：`hdc shell uitest uiInput click <x> <y>` / `uitest uiInput swipe <x1> <y1> <x2> <y2> <ms>`
-  （系统级输入注入，游戏正常响应）；坐标为物理屏幕系（1260×2720），游戏 canvas 顶 = 屏幕 y-120。
-  场景导航坐标备忘见 `spec/fps-profiling.md` 附注。
-- GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，页面内不能直接调 `String.format`。
+- **CDP 触摸已可用**（F-2 已解决）：关键在于坐标用 CSS 像素，见上文「CDP 触摸注入配方」。
+  旧记录“CDP 注入不驱动游戏”已过时；若再次失效，先跑 `hap_cdp_touchdiag.js` / `input_diag.js`
+  确认事件到达页面，再检查是否误传物理坐标。
+- GWT 优化产物中 `String` 静态方法不挂到 JS 原生 String 上，页面内不能直接调 `String.format`；
+  回归用 `emu_regression.js`（Node 移植），真机页面内验证用 `fmt_live_test.js`。
 - `asciiv2.js` 直接 `node asciiv2.js` 在某些目录下会报"找不到模块"——用完整路径调用。
 - PowerShell 内联 `node -e` 带引号表达式会被转义破坏——复杂求值写成 .js 文件再跑。
+
+## 构建产物溯源
+
+`tools/build-all.ps1` 每次构建会把 **permutation 文件名 + 大小 + SHA256、HAP SHA256、
+git commit、版本号** 追加到 `spec/build-log.md`。排查“设备上到底是哪版”时先查这个日志。
+GWT 编译是确定性的：源码没变时 permutation 哈希不变，变了就说明产物内容真的变了。

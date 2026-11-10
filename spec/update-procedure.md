@@ -76,17 +76,19 @@ $allText = (Get-ChildItem $msg -Recurse -Filter *.properties | Get-Content -Raw)
 [regex]::Matches($allText, '%(\d+\$)?[-#+ 0,(]*\d*(?:\.\d+)?([a-zA-Z%])') |
     ForEach-Object { $_.Groups[2].Value } | Group-Object | Sort-Object Count -Descending
 ```
-- 若出现新转换符/新精度用法：改 `html/patches/gwt-user/.../String.java` 后**必须先跑** `node tools/devtools/fmt_test.js`（21 用例）并补用例。
+- 若出现新转换符/新精度用法：改 `html/patches/gwt-user/.../String.java` 后**必须先跑** `node tools/devtools/emu_regression.js`（format 组含原 21 例基线）并补用例。
 - 新窗口类（`Wnd*` 内部类键如 `windows.wndhero$statstab.*`）同样走 `Messages.get` → emu format，机制不变。
 
 ### Step 6 — 构建、装机、回归
 推荐一键脚本：`tools/build-all.ps1`（GWT→sync→HAP→install→start），或手动按 `spec/README.md` §4 命令链。
 
-**回归验证三项**（缺一不可）：
-1. **门**：英雄经过/站在门格 → 木纹面板消失显示门洞（`spec/door-bug-rootcause.md`）；
-2. **格式**：角色窗口标题显示"1级女猎手"而非"1D级女猎手S"（`spec/text-format-bug.md`）；
-3. **锐度**：中文/像素字体锐利（backing = CSS×3.25，`spec/rendering-sharpness.md`）。
+**回归验证四项**（缺一不可）：
+1. **emu 套件**：`node tools/devtools/emu_regression.js` 全绿（String.format / subarray / getDensity / 坐标换算；`build-all.ps1` 已自动执行）；
+2. **门**：英雄经过/站在门格 → 木纹面板消失显示门洞（`spec/door-bug-rootcause.md`）；
+3. **格式**：角色窗口标题显示"1级女猎手"而非"1D级女猎手S"（`spec/text-format-bug.md`）；
+4. **锐度**：中文/像素字体锐利（backing = CSS×3.25，`spec/rendering-sharpness.md`）。
 另加一轮快速冒烟：新版本主要新内容（新怪/新物品/新界面）目视正常。
+构建后确认 `spec/build-log.md` 已追加本次 permutation + HAP 哈希。
 
 ### Step 7 — 提交推送
 ```powershell
@@ -114,7 +116,7 @@ git push
 ## 4. 已知陷阱备忘
 
 - **行号映射脆弱**：Step 2 的 transform 是"行号 + 必须匹配"双重校验，上游任何重构都会触发 fail-fast——这是设计（宁可构建失败不可静默错改），照报错逐个更新映射即可。
-- **permutation 哈希只在内容变化时变**：GWT 编译是确定性的（user.agent 已收敛为单 permutation）——源码没变重编译哈希不变（如 safari 分支稳定为 `F58B4CCE…`），变哈希=内容真的变了。`tools/sync-gwt.js` 自动清 rawfile 陈旧文件；确认 rawfile 变更全部 `git add`（历史哈希可溯源部署版本）。
+- **permutation 哈希只在内容变化时变**：GWT 编译是确定性的（user.agent 已收敛为单 permutation）——源码没变重编译哈希不变（如 safari 分支稳定为 `F58B4CCE…`），变哈希=内容真的变了。`tools/sync-gwt.js` 自动清 rawfile 陈旧文件；确认 rawfile 变更全部 `git add`。每次构建的 permutation/SHA256 自动记入 `spec/build-log.md`（F-4），部署溯源以该日志为准。
 - **`serve_dist.js` / `spd_*.{png,json}` / `*.log`**（game 根）是移植期调试残留，替换上游源码时别把它们当上游文件纠结。
 - **app 进程会被系统回收**：装机后验证时 pid 变化需重建 fport + real_ws.txt（见 `tools/devtools/README.md`）。
 - **GWT 编译日志**很大，用文件重定向看（`build-all.ps1` 已自动写入 `%TEMP%\deveco\build-all-gwt.log`）。

@@ -70,8 +70,9 @@
 
 ## 验证
 
-1. **算法回归**：把新 `formatImpl` 移植成 Node 版 `fmt_test.js`，**21 用例全过**，覆盖：
-   `%1$d级%2$s`、乱序 `%2$s…%1$s`、`%1$.0f%%`、`%05d`、`%-6s`、`%.2f` 等。
+1. **算法回归**：`tools/devtools/emu_regression.js` 的 format 组（含最早 Node 版 `fmt_test.js` 的
+   **21 用例基线**，并扩展到全转换/宽度精度/边界共 80+ 断言）全过，覆盖：
+   `%1$d级%2$s`、乱序 `%2$s…%1$s`、`%1$.0f%%`、`%05d`、`%-6s`、`%.2f`、`%x/%X/%o/%b/%c`、缺参/未知转换等。
 2. **构建部署**：GWT 重编译成功 → `sync-gwt.js` 同步（新产物 `F58B4CCE…`/`F92C0F1A…`
    各 ~4.9MB，旧 permutation 清除，patch check OK）→ `devecocli build` → `hdc install -r` 成功。
 3. **真机视觉确认**：用户裁定不需要单独做（与糊字确认一起豁免，见 `future-work.md` A 组）。

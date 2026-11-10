@@ -42,8 +42,82 @@ function Invoke-Step {
     Write-Host "[OK] $Name（$([math]::Round($sw.Elapsed.TotalSeconds,1))s）" -ForegroundColor Green
 }
 
+function Get-Sha256 {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return 'n/a' }
+    return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLower()
+}
+
+# 构建产物溯源（future-work F-4）：permutation + SHA256 + HAP + git commit → spec/build-log.md
+function Write-BuildLog {
+    param([string]$Mode, [string]$HapPath)
+    $logPath = Join-Path $repo "spec\build-log.md"
+    if (-not (Test-Path -LiteralPath $logPath)) {
+        $header = @"
+# 构建产物溯源日志
+
+每次 ``tools/build-all.ps1`` 构建后自动追加。字段：
+- **git**：构建时仓库 HEAD（短哈希）
+- **permutation**：GWT 产物 ``*.cache.js`` 文件名前缀（GWT 的 permutation 哈希）
+- **HAP SHA256**：最终安装/分发的 HAP 内容哈希
+- **permutation 合集 SHA256**：所有 cache.js 的「文件名+SHA256」归并哈希，便于快速比对两次构建
+"@
+        [System.IO.File]::WriteAllText($logPath, $header, (New-Object System.Text.UTF8Encoding($false)))
+    }
+    $appJson = Get-Content -LiteralPath (Join-Path $repo "AppScope\app.json5") -Raw
+    $versionName = if ($appJson -match '"versionName"\s*:\s*"([^"]+)"') { $matches[1] } else { 'unknown' }
+    $versionCode = if ($appJson -match '"versionCode"\s*:\s*(\d+)') { $matches[1] } else { 'unknown' }
+    $commit = if (Get-Command git -ErrorAction SilentlyContinue) {
+        (& git -C $repo rev-parse --short HEAD 2>$null)
+    } else { '' }
+    if (-not $commit) { $commit = 'unknown' }
+    $hapHash = Get-Sha256 $HapPath
+    $hapSize = if (Test-Path -LiteralPath $HapPath) {
+        [math]::Round((Get-Item -LiteralPath $HapPath).Length / 1MB, 2)
+    } else { 'n/a' }
+
+    $permDir = Join-Path $repo "entry\src\main\resources\rawfile\web\shattered"
+    $permLines = @()
+    $manifest = @()
+    if (Test-Path -LiteralPath $permDir) {
+        foreach ($file in (Get-ChildItem -LiteralPath $permDir -Filter "*.cache.js" | Sort-Object Name)) {
+            $hash = Get-Sha256 $file.FullName
+            $size = [math]::Round($file.Length / 1MB, 2)
+            $permLines += "| ``$($file.Name)`` | $size MB | ``$hash`` |"
+            $manifest += "$($file.Name):$hash"
+        }
+    }
+    $combined = 'n/a'
+    if ($manifest.Count -gt 0) {
+        $sha = [System.Security.Cryptography.SHA256]::Create()
+        try {
+            $bytes = [System.Text.Encoding]::UTF8.GetBytes(($manifest -join "`n"))
+            $combined = ([System.BitConverter]::ToString($sha.ComputeHash($bytes)) -replace '-', '').ToLower()
+        } finally {
+            $sha.Dispose()
+        }
+    }
+
+    $now = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
+    $table = [string]::Join([Environment]::NewLine, $permLines)
+    $entry = @"
+
+## $now ｜ v$versionName ($versionCode) ｜ $Mode
+
+- git: ``$commit``
+- HAP: ``$(Split-Path -Leaf $HapPath)``（$hapSize MB）SHA256 ``$hapHash``
+- permutation 合集 SHA256: ``$combined``
+
+| permutation | 大小 | SHA256 |
+|---|---|---|
+$table
+"@
+    [System.IO.File]::AppendAllText($logPath, $entry, (New-Object System.Text.UTF8Encoding($false)))
+    Write-Host "[i] 构建日志已追加：$logPath" -ForegroundColor DarkGray
+}
+
 if (-not $SkipGwt) {
-    Invoke-Step "1/5 GWT 编译（日志: $gwtLog）" {
+    Invoke-Step "1/6 GWT 编译（日志: $gwtLog）" {
         New-Item -ItemType Directory -Path (Split-Path $gwtLog) -Force | Out-Null
         Push-Location $game
         try { & .\gradlew.bat :html:gwtCompile --console=plain *> $gwtLog } finally { Pop-Location }
@@ -53,11 +127,16 @@ if (-not $SkipGwt) {
     Write-Host "[SKIP] GWT 编译（-SkipGwt）" -ForegroundColor Yellow
 }
 
-Invoke-Step "2/5 同步 dist → rawfile（含 GL 补丁安全网）" {
+Invoke-Step "2/6 同步 dist → rawfile（含 GL 补丁安全网）" {
     node (Join-Path $repo "tools\sync-gwt.js")
 }
 
-Invoke-Step "3/5 构建 HAP（$(if ($Unsigned) { 'unsigned' } elseif ($Release) { 'release' } else { 'debug' })）" {
+# 同步后必跑 emu 回归（fail-fast：算法/补丁/产物校验失败则不进入 HAP 构建）
+Invoke-Step "3/6 GWT emu 回归（format/subarray/density/坐标/补丁源）" {
+    node (Join-Path $repo "tools\devtools\emu_regression.js")
+}
+
+Invoke-Step "4/6 构建 HAP（$(if ($Unsigned) { 'unsigned' } elseif ($Release) { 'release' } else { 'debug' })）" {
     $buildMode = if ($Release -or $Unsigned) { "release" } else { "debug" }
     $profilePath = Join-Path $repo "build-profile.json5"
     $profileBackup = $null
@@ -103,6 +182,7 @@ if ($Unsigned) {
     New-Item -ItemType Directory -Path $dist -Force | Out-Null
     $distName = "SPD-HarmonyOS-v$versionName-unsigned.hap"
     Copy-Item $unsignedHap (Join-Path $dist $distName) -Force
+    Write-BuildLog -Mode 'release-unsigned' -HapPath $unsignedHap
     Write-Host ""
     Write-Host "[完成] 未签名分发包：$(Join-Path $dist $distName)" -ForegroundColor Green
     Write-Host "       用自动签名工具（如 hokit）选择该文件 → 自动签名 → 安装（工具会把你/对方设备加入调试 Profile）"
@@ -111,6 +191,8 @@ if ($Unsigned) {
 }
 
 if ($NoInstall) {
+    $modeLabel = if ($Release) { 'release' } else { 'debug' }
+    Write-BuildLog -Mode $modeLabel -HapPath $hap
     Write-Host ""
     Write-Host "[完成] HAP 产物：$hap" -ForegroundColor Green
     Write-Host "       总耗时 $([math]::Round($totalSw.Elapsed.TotalSeconds,1))s（-NoInstall：未装机）"
@@ -121,15 +203,18 @@ if (-not (Test-Path -LiteralPath $hap)) {
     Write-Host "[FAIL] 找不到 HAP 产物：$hap" -ForegroundColor Red
     exit 1
 }
-Invoke-Step "4/5 安装到设备 $Device" {
+Invoke-Step "5/6 安装到设备 $Device" {
     & $HdcPath -t $Device install -r $hap
 }
 
 if (-not $NoStart) {
-    Invoke-Step "5/5 启动应用" {
+    Invoke-Step "6/6 启动应用" {
         & $HdcPath -t $Device shell aa start -b com.example.shatteredpixeldungeon -a EntryAbility
     }
 }
+
+$modeLabel = if ($Release) { 'release' } else { 'debug' }
+Write-BuildLog -Mode $modeLabel -HapPath $hap
 
 # 展示当前 rawfile permutation（部署溯源）
 $perm = Get-ChildItem (Join-Path $repo "entry\src\main\resources\rawfile\web\shattered") -Filter "*.cache.js" |

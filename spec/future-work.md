@@ -60,10 +60,10 @@
 
 ## F. 工程化 / 可维护性（P2）
 
-- [ ] **emu 回归测试集**：以 `fmt_test.js`（21 用例）为起点，扩成 GWT emu 回归套件：String.format 全转换、buffer subarray 语义、getDensity、getRelativeX/Y 坐标换算；GWT 重编译后跑一遍。
+- [x] **emu 回归测试集**（2026-11-10 完成）：`tools/devtools/emu_regression.js` 共 **134 断言 / 5 组**——String.format 全转换（含原 21 例基线、位置参数、宽度/精度/补零/未知转换/缺参）、NIO `subarray(position, limit)` 门 bug 语义（含错误写法反例与视图共享）、`getDensity` + PixelScene 默认 zoom、`getRelativeX/Y` 与 CDP CSS 坐标换算；`tools/build-all.ps1` 在 GWT 编译后自动执行（fail-fast），也可单独 `node tools/devtools/emu_regression.js`。
 - [x] **修复 CDP 注入输入失效**（2026-11-08 完成，D-5 期间解决）：CDP `Input.dispatchTouchEvent` 可用配方——坐标必须用 **CSS 像素**（物理坐标 ÷ `1260/innerWidth`，dpr 3.25 下 ≈×0.308，物理坐标会整体偏移出屏），事件对为 `touchStart`（touchPoints 含 x/y/radiusX/radiusY/force）+ 延时 + `touchEnd`。真机验证长按注入成功（1s 按住触发 0.5s 阈值 onLongClick → tooltip + 振动链全通）。真机 UI 自动化输入通道已可用（CDP touch + uitest click）。
-- [ ] **调试工具文档化**：CDP 调试全流程（pid → fport → real_ws.txt → dump/tap/eval）写入 tools/devtools/README；注意 real_ws.txt 每次重启 app 后要刷新、fport 规则要随 pid 重建。
-- [ ] **构建产物哈希记录**：每次构建记录 permutation 哈希+SHA256 到 spec/build-log.md，出问题时可溯源部署了哪个版本。
+- [x] **调试工具文档化**（2026-11-10 完成）：`tools/devtools/README.md` 已写入 CDP 全流程（启动 app → pid → 重建 fport → `/json` 取 ws → real_ws.txt → dump/tap/eval）、`real_ws.txt` 重启后刷新与 fport 随 pid 重建的坑、F-2 触摸注入配方（CSS 坐标换算 + touchStart/延时/touchEnd + 长按）及 emu 回归/构建溯源入口。
+- [x] **构建产物哈希记录**（2026-11-10 完成）：`tools/build-all.ps1` 新增 `Write-BuildLog`，每次构建（debug/release/unsigned/-NoInstall）把 git commit、版本号、HAP SHA256、每个 permutation 文件名/大小/SHA256、permutation 合集 SHA256 追加到 `spec/build-log.md`；已补录当前基线。
 
 ## G. 游戏体验增强（P3 — 可选）
 
